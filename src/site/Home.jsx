@@ -821,7 +821,7 @@ export default function Home() {
           <motion.div variants={fadeUp} className="mt-16 flex justify-center">
             <div className="relative w-full max-w-4xl aspect-video rounded-lg overflow-hidden shadow-lg">
               <iframe
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                src="https://www.youtube.com/embed/yQcNOnNs6X4?si=dNxHRKDFRob13YHp"
                 title="Vídeo de Apresentação TRAGA Rápido"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
