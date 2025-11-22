@@ -12,7 +12,7 @@ export default function Footer() {
             text-2xl text-white border border-white rounded-full
             flex items-center justify-center
             m-1 transition-all duration-300
-            hover:bg-blue-600 hover:rotate-180
+            hover:bg-blue-700 hover:rotate-180
           "
         >
           <i className="fab fa-facebook-f"></i>
@@ -27,7 +27,7 @@ export default function Footer() {
             text-2xl text-white border border-white rounded-full
             flex items-center justify-center
             m-1 transition-all duration-300
-            hover:bg-blue-600 hover:rotate-180
+            hover:bg-blue-700 hover:rotate-180
           "
         >
           <i className="fab fa-instagram"></i>
@@ -42,7 +42,7 @@ export default function Footer() {
             text-2xl text-white border border-white rounded-full
             flex items-center justify-center
             m-1 transition-all duration-300
-            hover:bg-blue-600 hover:rotate-180
+            hover:bg-blue-700 hover:rotate-180
           "
         >
           <i className="fab fa-linkedin"></i>
