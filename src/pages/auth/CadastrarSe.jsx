@@ -13,7 +13,7 @@ export default function CadastrarSe() {
 
         {/* COLUNA DIREITA (Ocupando 100% no tablet e mobile) */}
         <div className="w-full lg:w-1/2 p-10 flex flex-col justify-center min-h-screen lg:min-h-0">
-          <h1 className="text-3xl font-extrabold text-blue-600 text-center mb-2 tracking-wide">
+          <h1 className="text-3xl font-extrabold text-blue-700 text-center mb-2 tracking-wide">
             TRAGA RÁPIDO
           </h1>
 
@@ -92,19 +92,19 @@ export default function CadastrarSe() {
             {/* Já tenho conta */}
             <Link
               to="/auth/login"
-              className="text-blue-600 text-sm text-center hover:text-blue-400"
+              className="text-blue-700 text-sm text-center hover:text-blue-600"
             >
               Já tenho uma conta
             </Link>
             <Link
               to="/auth/cadastrar-solicitante"
-              className="text-blue-600 text-sm text-center hover:text-blue-400"
+              className="text-blue-700 text-sm text-center hover:text-blue-600"
             >
               Solicitante
             </Link>
             <Link
               to="/auth/cadastrar-entregador"
-              className="text-blue-600 text-sm text-center hover:text-blue-400"
+              className="text-blue-700 text-sm text-center hover:text-blue-600"
             >
               Entregador
             </Link>

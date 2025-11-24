@@ -17,7 +17,7 @@ export default function CadastrarEntregador() {
 
         {/* COLUNA DIREITA (Ocupando 100% no tablet e mobile) */}
         <div className="w-full lg:w-1/2 p-10 flex flex-col justify-center min-h-screen lg:min-h-0">
-          <h1 className="text-3xl font-extrabold text-blue-600 text-center mb-2 tracking-wide">
+          <h1 className="text-3xl font-extrabold text-blue-700 text-center mb-2 tracking-wide">
             TRAGA RÁPIDO
           </h1>
 
@@ -103,7 +103,7 @@ export default function CadastrarEntregador() {
             {/* Botão concluir cadastro */}
             <button
               type="submit"
-              className="w-full cursor-pointer mt-6 bg-blue-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-700 transition"
+              className="w-full cursor-pointer mt-6 bg-blue-700 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-900 transition"
             >
               Concluir Cadastro
             </button>
