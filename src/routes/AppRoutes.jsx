@@ -1,14 +1,14 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "../site/Home";
-import NotFound from "../site/NotFound";
+import Home from "../pages/site/Home";
+import NotFound from "../pages/site/NotFound";
 
-import Login from "../auth/Login";
-import CadastrarSe from "../auth/CadastrarSe";
-import CadastrarSolicitante from "../auth/CadastrarSolicitante";
-import CadastrarEntregador from "../auth/CadastrarEntregador";
-import EsqueceuSenha from "../auth/EsqueceuSenha";
-import RedefinirSenha from "../auth/RedefinirSenha";
-import VerifiqueEmail from "../auth/VerifiqueEmail";
+import Login from "../pages/auth/Login";
+import CadastrarSe from "../pages/auth/CadastrarSe";
+import CadastrarSolicitante from "../pages/auth/CadastrarSolicitante";
+import CadastrarEntregador from "../pages/auth/CadastrarEntregador";
+import EsqueceuSenha from "../pages/auth/EsqueceuSenha";
+import RedefinirSenha from "../pages/auth/RedefinirSenha";
+import VerifiqueEmail from "../pages/auth/VerifiqueEmail";
 
 export default function AppRoutes () {
     return (
