@@ -2,7 +2,26 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import CadastroFimImg from "../../assets/img/cadastrofim.png";
 
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from "react-hot-toast";
+
+import { cadastroSolicitanteSchema } from "../../validations/cadastroSolicitante.schema";
+
 export default function CadastrarSolicitante() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(cadastroSolicitanteSchema),
+  });
+
+  const onSubmit = (data) => {
+    console.log("Dados enviados:", data);
+    toast.success("Cadastro concluído com sucesso!");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg flex">
@@ -21,26 +40,66 @@ export default function CadastrarSolicitante() {
             Complete seu cadastro de solicitante
           </h2>
 
-          <form method="POST" className="flex flex-col gap-4">
-            {/* Nome e email na mesma linha no desktop, empilhados no mobile */}
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            {/* fotos na mesma linha no desktop, empilhados no mobile */}
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
-                <label className="text-gray-800 text-sm">NIF(Número de Identificação Fiscal)</label>
+                <label className="text-gray-800 text-sm">Foto do Rosto</label>
                 <input
-                  type="text"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  placeholder="Digite o seu NIF"
-                  required
+                  type="file"
+                  {...register("fotoRosto")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.fotoRosto ? "border border-red-500" : ""
+                }`}
                 />
+                {errors.fotoRosto && (
+                  <p className="text-red-600 text-sm mt-1">{errors.fotoRosto.message}</p>
+                )}
               </div>
 
               <div className="flex-1">
-                <label className="text-gray-800 text-sm">Foto</label>
+                <label className="text-gray-800 text-sm">Foto BI Frente</label>
                 <input
                   type="file"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  required
+                  {...register("biFrente")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.biFrente ? "border border-red-500" : ""
+                }`}
                 />
+                {errors.biFrente && (
+                  <p className="text-red-600 text-sm mt-1">{errors.biFrente.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <label className="text-gray-800 text-sm">Foto BI Verso</label>
+                <input
+                  type="file"
+                  {...register("biVerso")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.biVerso ? "border border-red-500" : ""
+                }`}
+                />
+                {errors.biVerso && (
+                  <p className="text-red-600 text-sm mt-1">{errors.biVerso.message}</p>
+                )}
+              </div>
+
+              <div className="flex-1">
+                <label className="text-gray-800 text-sm">Morada</label>
+                <input
+                  type="text"
+                  {...register("morada")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.morada ? "border border-red-500" : ""
+                }`}
+                placeholder="Digite sua morada"
+                />
+                {errors.morada && (
+                  <p className="text-red-600 text-sm mt-1">{errors.morada.message}</p>
+                )}
               </div>
             </div>
 
@@ -49,13 +108,18 @@ export default function CadastrarSolicitante() {
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">Tipo de Pessoa</label>
                 <select
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  required
+                  {...register("tipoPessoa")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.tipoPessoa ? "border border-red-500" : ""
+                }`}
                 >
                   <option value="">Selecione o tipo</option>
-                  <option value="entregador">Empresa</option>
-                  <option value="solicitante">Singular</option>
+                  <option value="empresa">Empresa</option>
+                  <option value="singular">Singular</option>
                 </select>
+                {errors.tipoPessoa && (
+                  <p className="text-red-600 text-sm mt-1">{errors.tipoPessoa.message}</p>
+                )}
               </div>
             </div>
 

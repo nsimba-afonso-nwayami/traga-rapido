@@ -2,7 +2,27 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LoginImg from "../../assets/img/login.png";
 
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from "react-hot-toast";
+
+//Importa a validação separada
+import { loginSchema } from "../../validations/loginSchema";
+
 export default function Login() {
+  //React Hook Form usando schema externo
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+  });
+
+  const onSubmit = (data) => {
+    console.log("Dados enviados:", data);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg flex">
@@ -22,17 +42,22 @@ export default function Login() {
             Entre na sua conta
           </h2>
 
-          <form method="POST" className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             
             {/* Email */}
             <div>
               <label className="text-gray-800 text-sm">Email</label>
               <input
                 type="email"
-                className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.email ? "border border-red-500" : ""
+                }`}
                 placeholder="Digite o seu email"
-                required
+                {...register("email")}
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              )}
             </div>
 
             {/* Senha */}
@@ -40,10 +65,15 @@ export default function Login() {
               <label className="text-gray-800 text-sm">Senha</label>
               <input
                 type="password"
-                className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                {...register("password")}
+                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.password ? "border border-red-500" : ""
+                }`}
                 placeholder="Digite a sua senha"
-                required
               />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              )}
             </div>
 
             {/* Botão Entrar */}

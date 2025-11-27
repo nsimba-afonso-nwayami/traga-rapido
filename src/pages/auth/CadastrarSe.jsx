@@ -2,7 +2,28 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import CadastroImg from "../../assets/img/cadastrarse.png";
 
+
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from "react-hot-toast";
+
+// Importa a validação separada
+import { cadastroSchema } from "../../validations/cadastroSchema";
+
 export default function CadastrarSe() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(cadastroSchema),
+  });
+
+  const onSubmit = (data) => {
+    console.log("Cadastro enviado:", data);
+    toast.success("Cadastrado com sucesso!");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg flex">
@@ -21,27 +42,37 @@ export default function CadastrarSe() {
             Cadastrar-se
           </h2>
 
-          <form method="POST" className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Nome e email na mesma linha no desktop, empilhados no mobile */}
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">Nome</label>
                 <input
                   type="text"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                  {...register("nome")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.nome ? "border border-red-500" : ""
+                  }`}
                   placeholder="Digite o seu nome"
-                  required
                 />
+                {errors.nome && (
+                  <p className="text-red-500 text-sm mt-1">{errors.nome.message}</p>
+                )}
               </div>
 
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">Email</label>
                 <input
                   type="email"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                  {...register("email")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.email ? "border border-red-500" : ""
+                  }`}
                   placeholder="Digite o seu email"
-                  required
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                )}
               </div>
             </div>
 
@@ -51,22 +82,32 @@ export default function CadastrarSe() {
                 <label className="text-gray-800 text-sm">Telefone</label>
                 <input
                   type="tel"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                  {...register("telefone")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.telefone ? "border border-red-500" : ""
+                  }`}
                   placeholder="Digite o seu telefone"
-                  required
                 />
+                {errors.telefone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.telefone.message}</p>
+                )}
               </div>
 
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">Tipo de Usuário</label>
                 <select
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  required
+                  {...register("tipo")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.tipo ? "border border-red-500" : ""
+                  }`}
                 >
                   <option value="">Selecione o tipo</option>
                   <option value="entregador">Entregador</option>
                   <option value="solicitante">Solicitante</option>
                 </select>
+                {errors.tipo && (
+                  <p className="text-red-500 text-sm mt-1">{errors.tipo.message}</p>
+                )}
               </div>
             </div>
 
@@ -75,10 +116,15 @@ export default function CadastrarSe() {
               <label className="text-gray-800 text-sm">Senha</label>
               <input
                 type="password"
-                className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                {...register("senha")}
+                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.senha ? "border border-red-500" : ""
+                }`}
                 placeholder="Digite a sua senha"
-                required
               />
+              {errors.senha && (
+                <p className="text-red-500 text-sm mt-1">{errors.senha.message}</p>
+              )}
             </div>
 
             {/* Botão Entrar */}

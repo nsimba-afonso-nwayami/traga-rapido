@@ -2,7 +2,26 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import EsqueceuSenhaImg from "../../assets/img/esqueceusenha.png";
 
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from "react-hot-toast";
+
+import { esqueceuSenhaSchema } from "../../validations/esqueceuSenha.schema";
+
 export default function EsqueceuSenha() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(esqueceuSenhaSchema),
+  });
+
+  const onSubmit = (data) => {
+    console.log("Email enviado para recuperação:", data);
+    toast.success("Link de recuperação enviado com sucesso!");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg flex">
@@ -21,16 +40,21 @@ export default function EsqueceuSenha() {
             Esqueceu a senha?
           </h2>
 
-          <form method="POST" className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Email */}
             <div>
               <label className="text-gray-800 text-sm">Email</label>
               <input
                 type="email"
-                className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                {...register("email")}
+                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                  errors.email ? "border border-red-500" : ""
+                }`}
                 placeholder="Digite o seu email"
-                required
               />
+              {errors.email && (
+                <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+              )}
             </div>
 
             {/* Botão Entrar */}
