@@ -2,7 +2,25 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import CadastroFimImg from "../../assets/img/cadastrofim.png";
 
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+
+import { cadastroEntregadorSchema } from "../../validations/cadastroEntregador.schema";
+
 export default function CadastrarEntregador() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(cadastroEntregadorSchema),
+  });
+
+  const onSubmit = (data) => {
+    console.log("Dados enviados:", data);
+    toast.success("Cadastro de entregador concluído com sucesso!");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg flex">
@@ -25,78 +43,90 @@ export default function CadastrarEntregador() {
             Complete seu cadastro de entregador
           </h2>
 
-          <form method="POST" className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Concluindo cadastro */}
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">
-                  Documento de Identidade
+                  Foto do Rosto
                 </label>
                 <input
                   type="file"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  placeholder="Digite o seu NIF"
-                  required
+                  {...register("fotoRosto")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.fotoRosto ? "border border-red-500" : ""
+                  }`}
                 />
+                {errors.fotoRosto && (
+                  <p className="text-red-600 text-sm mt-1">{errors.fotoRosto.message}</p>
+                )}
               </div>
 
               <div className="flex-1">
-                <label className="text-gray-800 text-sm">Número do Bilhete de Identidade</label>
+                <label className="text-gray-800 text-sm">
+                  Foto BI Frente
+                </label>
                 <input
-                  type="text"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  required
+                  type="file"
+                  {...register("fotoBIFrente")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.fotoBIFrente ? "border border-red-500" : ""
+                  }`}
                 />
+                {errors.fotoBIFrente && (
+                  <p className="text-red-600 text-sm mt-1">{errors.fotoBIFrente.message}</p>
+                )}
               </div>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">
-                  Número da Carta de Condução
+                  Foto BI Verso
                 </label>
                 <input
-                  type="text"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  placeholder="Digite o número da sua carta"
-                  required
+                  type="file"
+                  {...register("fotoBIVerso")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.fotoBIVerso ? "border border-red-500" : ""
+                  }`}
                 />
+                {errors.fotoBIVerso && (
+                  <p className="text-red-600 text-sm mt-1">{errors.fotoBIVerso.message}</p>
+                )}
               </div>
 
               <div className="flex-1">
-                <label className="text-gray-800 text-sm">Foto</label>
+                <label className="text-gray-800 text-sm">carta de Condução</label>
                 <input
                   type="file"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  required
+                  {...register("cartaConducao")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.cartaConducao ? "border border-red-500" : ""
+                  }`}
                 />
+                {errors.cartaConducao && (
+                  <p className="text-red-600 text-sm mt-1">{errors.cartaConducao.message}</p>
+                )}
               </div>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1">
-                <label className="text-gray-800 text-sm">Tipo de Veículo</label>
-                <select
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
-                  required
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="carro">Carro</option>
-                  <option value="camião">Camião</option>
-                  <option value="mota">Mota</option>
-                </select>
-              </div>
-
               <div className="flex-1">
                 <label className="text-gray-800 text-sm">
                   Placa do veículo
                 </label>
                 <input
                   type="text"
-                  className="w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none"
+                  {...register("placaVeiculo")}
+                  className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
+                    errors.placaVeiculo ? "border border-red-500" : ""
+                  }`}
                   placeholder="Digite a placa do seu veículo"
-                  required
                 />
+                {errors.placaVeiculo && (
+                  <p className="text-red-600 text-sm mt-1">{errors.placaVeiculo.message}</p>
+                )}
               </div>
             </div>
 
