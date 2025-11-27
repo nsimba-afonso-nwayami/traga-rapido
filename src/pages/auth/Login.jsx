@@ -21,6 +21,7 @@ export default function Login() {
 
   const onSubmit = (data) => {
     console.log("Dados enviados:", data);
+    toast.success("Login feito com sucesso!");
   };
 
   return (
