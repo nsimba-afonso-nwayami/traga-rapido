@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function EditarPedido() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,31 +29,45 @@ export default function EditarPedido() {
         </h1>
 
         <nav className="space-y-4 text-lg text-white">
-          <a className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer">
+          <Link
+            to="/dashboard/solicitante/"
+            className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer"
+          >
             <i className="fas fa-tachometer-alt mr-3 text-blue-500"></i>
             Dashboard
-          </a>
-          <a className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer">
+          </Link>
+          <Link
+            to="/dashboard/solicitante/pedidos"
+            className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer"
+          >
             <i className="fas fa-box mr-3 text-blue-500"></i>
             Meus Pedidos
-          </a>
-          {/* Item Ativo */}
-          <a className="block p-3 rounded-lg bg-blue-500/40 font-bold cursor-pointer">
-            <i className="fas fa-plus-circle mr-3 text-white"></i>
+          </Link>
+          <Link
+            to="/dashboard/solicitante/novo-pedido"
+            className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer"
+          >
+            <i className="fas fa-plus-circle mr-3 text-blue-500"></i>
             Criar Novo Pedido
-          </a>
-          <a className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer">
+          </Link>
+          <Link
+            to="/dashboard/solicitante/historico"
+            className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer"
+          >
             <i className="fas fa-history mr-3 text-blue-500"></i>
             Histórico
-          </a>
-          <a className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer">
+          </Link>
+          <Link
+            to="/dashboard/solicitante/configuracoes"
+            className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer"
+          >
             <i className="fas fa-gear mr-3 text-blue-500"></i>
             Configurações
-          </a>
-          <a className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer">
+          </Link>
+          <Link className="block p-3 rounded-lg hover:bg-blue-500/40 cursor-pointer">
             <i className="fas fa-sign-out-alt mr-3 text-blue-500"></i>
             Logout
-          </a>
+          </Link>
         </nav>
       </aside>
 
