@@ -25,6 +25,12 @@ import NotFoundSolicitante from "../pages/solicitante/NotFoundSolicitante"
 
 //Entregador
 import DashboardEntregador from "../pages/entregador/Dashboard"
+import ListaDePedidos from "../pages/entregador/ListaDePedidos"
+import DetalhesCorrida from "../pages/entregador/DetalhesCorrida"
+import HistoricoEntregador from "../pages/entregador/HistoricoEntregador"
+import NotificacoesEntregador from "../pages/entregador/NotificacoesEntregador"
+import ConfiguracoesEntregador from "../pages/entregador/ConfiguracoesEntregador"
+import NotFoundEntregador from "../pages/entregador/NotFoundEntregador"
 
 export default function AppRoutes () {
     return (
@@ -42,7 +48,7 @@ export default function AppRoutes () {
             <Route path="/auth/redefinir-senha" element={<RedefinirSenha />} />
             <Route path="/auth/verifique-email" element={<VerifiqueEmail />} />
 
-            {/*Rotas do solicintante */}
+            {/*Rotas do solicitante */}
             <Route path="/dashboard/solicitante/">
                 <Route path="" element={<DashboardSolicitante />} />
                 <Route path="pedidos" element={<MeusPedidos />} />
@@ -53,12 +59,20 @@ export default function AppRoutes () {
                 <Route path="configuracoes" element={<Configuracoes />} />
                 <Route path="notificacoes" element={<NotificacoesSolicitante />} />
                 
-                {/* ROTA NOT FOUND ESPECÍFICA PARA O SOLICITANTE */}
                 <Route path="*" element={<NotFoundSolicitante />} />
             </Route>
 
             {/*Rotas do entregador */}
-            <Route path="/dashboard/entregador/" element={<DashboardEntregador />} />
+            <Route path="/dashboard/entregador/">
+                <Route path="" element={<DashboardEntregador />} />
+                <Route path="lista-pedidos" element={<ListaDePedidos />} />
+                <Route path="detalhes-corrida" element={<DetalhesCorrida />} />
+                <Route path="historico" element={<HistoricoEntregador />} />
+                <Route path="notificacoes" element={<NotificacoesEntregador />} />
+                <Route path="configuracoes" element={<ConfiguracoesEntregador />} />
+                
+                <Route path="*" element={<NotFoundEntregador />} />
+            </Route>
         </Routes>
     )
 }
