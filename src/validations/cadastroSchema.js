@@ -18,9 +18,9 @@ export const cadastroSchema = Yup.object({
 
   tipo: Yup.string()
     .required("O tipo de usuário é obrigatório")
-    .oneOf(["entregador", "solicitante"], "Selecione um tipo válido"),
+    .oneOf(["ENTREGADOR", "SOLICITANTE"], "Selecione um tipo válido"),
 
   senha: Yup.string()
     .required("A senha é obrigatória")
-    .min(6, "A senha deve ter no mínimo 6 caracteres"),
+    .min(8, "A senha deve ter no mínimo 8 caracteres"),
 });
