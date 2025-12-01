@@ -34,8 +34,4 @@ export const cadastroSolicitanteSchema = Yup.object().shape({
   morada: Yup.string()
     .required("A morada é obrigatória")
     .min(3, "A morada deve ter pelo menos 3 caracteres"),
-
-  tipoPessoa: Yup.string()
-    .required("Selecione o tipo de pessoa")
-    .oneOf(["empresa", "singular"], "Tipo inválido"),
 });
