@@ -1,8 +1,10 @@
 import { useState } from "react";
+import SidebarEntregador from "../../components/entregador/SidebarEntregador";
+import HeaderEntregador from "../../components/entregador/HeaderEntregador";
 
 export default function HistoricoEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
   const [filtroPeriodo, setFiltroPeriodo] = useState('Semana'); // Estado para o filtro
 
   // Dados Mockados para o Histórico
@@ -57,107 +59,21 @@ export default function HistoricoEntregador() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* ASIDE (SIDEBAR) */}
-      <aside
-        className={`
-          bg-blue-800/90 backdrop-blur-sm border-r border-blue-700
-          w-64 fixed top-0 left-0 h-screen p-6 shadow-xl
-          transition-transform duration-300
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-64"}
-          md:translate-x-0
-          z-9999
-        `}
-      >
-        <button
-          className="md:hidden absolute top-4 right-4 text-2xl text-white"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <i className="fas fa-times"></i>
-        </button>
-
-        <h1 className="text-2xl font-bold mb-10 tracking-wide mt-6 md:mt-0 text-white">
-          TRAGA<span className="text-blue-500">Rápido</span>
-        </h1>
-
-        <nav className="space-y-4 text-lg text-white">
-          <a className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors">
-            <i className="fas fa-tachometer-alt mr-3 text-blue-400"></i>
-            Dashboard
-          </a>
-          
-          <a className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors">
-            <i className="fas fa-list-ul mr-3 text-blue-400"></i>
-            Lista de Pedidos
-          </a>
-
-          <a className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors">
-            <i className="fas fa-route mr-3 text-blue-400"></i>
-            Detalhes da Corrida c/ Mapa
-          </a>
-          
-          <hr className="border-blue-700 my-4" />
-
-          {/* Item Ativo - Histórico */}
-          <a className="block p-3 rounded-lg bg-blue-600/60 font-bold cursor-pointer transition-colors">
-            <i className="fas fa-history mr-3 text-white"></i>
-            Histórico
-          </a>
-          <a className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors">
-            <i className="fas fa-gear mr-3 text-blue-400"></i>
-            Configurações
-          </a>
-          <a className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors">
-            <i className="fas fa-sign-out-alt mr-3 text-blue-400"></i>
-            Logout
-          </a>
-        </nav>
-      </aside>
-
-      {/* BACKDROP MOBILE */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-9000"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
+      {/* Sidebar */}
+      <SidebarEntregador
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        
         {/* HEADER */}
-        <header className="bg-blue-800/90 border-b border-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-10">
-          <button
-            className="md:hidden text-2xl text-white"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <i className="fas fa-bars"></i>
-          </button>
-          <h2 className="text-lg sm:text-xl font-bold tracking-wide text-white">
-            <i className="fas fa-history mr-2 text-blue-400"></i> Histórico de Ganhos e Corridas
-          </h2>
-          <div className="flex items-center gap-4 sm:gap-6">
-            
-            {/* ÍCONE DE NOTIFICAÇÕES */}
-            <Link to="/dashboard/entregador/notificacoes" className="relative text-xl sm:text-2xl text-blue-400 hover:text-blue-300 transition-all">
-                <i className="fas fa-bell"></i>
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    0
-                </span>
-            </Link>
-            
-            <div className={`p-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'} transition-colors duration-300 hidden sm:block`}>
-                <span className="text-xs font-bold text-white">
-                    {isOnline ? "ONLINE" : "OFFLINE"}
-                </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm opacity-80 hidden sm:block text-white">Luiz (Entregador)</span>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                <i className="fas fa-user text-white text-base"></i>
-              </div>
-            </div>
-          </div>
-        </header>
+        <HeaderEntregador
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          isOnline={isOnline}
+          setIsOnline={setIsOnline}
+        />
 
         {/* MAIN AREA - HISTÓRICO */}
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
