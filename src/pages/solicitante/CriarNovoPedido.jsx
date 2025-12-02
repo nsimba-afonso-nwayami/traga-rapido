@@ -27,40 +27,46 @@ export default function CriarNovoPedido() {
       const origemCoord = await geocodeAddress(data.origem);
       const destinoCoord = await geocodeAddress(data.destino);
 
-      // 2. Preparar payload no formato da API (sem solicitanteId)
+      // 2. Verificar se os endereços foram encontrados
+      if (!origemCoord || !destinoCoord) {
+        toast.error("Endereço de origem ou destino não encontrado.");
+        return;
+      }
+
+      // 3. Montar payload com conversão para number
       const payload = {
         titulo: data.titulo,
         descricao: data.descricao,
-        origemLatitude: origemCoord.lat,
-        origemLongitude: origemCoord.lon,
-        destinoLatitude: destinoCoord.lat,
-        destinoLongitude: destinoCoord.lon,
+        origem_latitude: Number(origemCoord.lat),
+        origem_longitude: Number(origemCoord.lon),
+        destino_latitude: Number(destinoCoord.lat),
+        destino_longitude: Number(destinoCoord.lon),
+        solicitante_id: 1
       };
 
-      // 3. Enviar para API
+      // Log para conferir os dados antes de enviar
+      console.log("Payload do pedido:", payload);
+
+      // 4. Enviar para a API
       const response = await criarPedido(payload);
 
       console.log("Pedido criado:", response.data);
-
-      toast.success("Pedido criado com sucesso!", {
-        duration: 3000,
-      });
+      toast.success("Pedido criado com sucesso!", { duration: 3000 });
 
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
 
-      if (error.message === "Endereço não encontrado.") {
-        toast.error("Verifique os endereços de origem e destino.");
-        return;
-      }
-
-      if (error.response?.data?.detail) {
-        toast.error(error.response.data.detail);
+      // Captura erro da API
+      if (error.response?.data) {
+        console.error("Detalhes do erro da API:", error.response.data);
+        toast.error("Erro ao criar pedido: " + (error.response.data.detail || "Erro interno"));
       } else {
         toast.error("Erro ao enviar pedido");
       }
     }
   };
+
+
 
 
   return (
