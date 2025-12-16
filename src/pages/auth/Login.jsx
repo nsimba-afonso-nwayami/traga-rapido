@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useEffect } from "react";
 import LoginImg from "../../assets/img/login.png";
 
 import { useForm } from "react-hook-form";
@@ -12,49 +12,66 @@ import { loginService } from "../../services/loginService";
 export default function Login() {
   const navigate = useNavigate();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
+  // 🔹 REDIRECIONAMENTO SE JÁ ESTIVER LOGADO
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const tipoUsuario = localStorage.getItem("tipoUsuario");
+
+    if (token && tipoUsuario) {
+      if (tipoUsuario === "SOLICITANTE") {
+        navigate("/dashboard/solicitante", { replace: true });
+      } else if (tipoUsuario === "ENTREGADOR") {
+        navigate("/dashboard/entregador", { replace: true });
+      }
+    }
+  }, [navigate]);
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
   });
 
   const onSubmit = async (data) => {
     try {
-      // chama API
+      // Chama a API
       const response = await loginService({
-        email: data.email,
+        username: data.username,
         password: data.password,
       });
 
-      console.log("Resposta login:", response.data);
+      // Mostra toda a resposta da API
+      console.log("Resposta login completa:", response.data);
 
-      const { token, id, tipo_usuario } = response.data;
+      // Extrai dados corretamente
+      const token = response.data.access || response.data.token;
+      const userId = response.data.user?.id || response.data.id;
+      const tipoUsuario = response.data.user?.tipo_usuario || response.data.tipo_usuario;
 
-      // salva no storage
+      // Salva no localStorage
       localStorage.setItem("token", token);
-      localStorage.setItem("userId", id);
-      localStorage.setItem("tipoUsuario", tipo_usuario);
+      localStorage.setItem("userId", userId);
+      localStorage.setItem("tipoUsuario", tipoUsuario);
 
+      // Mostra no console os dados salvos
+      console.log("Dados salvos no localStorage:", { token, userId, tipoUsuario });
+
+      // Mensagem de sucesso
       toast.success("Login feito com sucesso! Redirecionando...");
 
-      // delay antes do redirect
+      // Redireciona após 2 segundos
       setTimeout(() => {
-        if (tipo_usuario === "SOLICITANTE") {
-          navigate("/dashboard/solicitante");
-        } else if (tipo_usuario === "ENTREGADOR") {
-          navigate("/dashboard/entregador");
+        if (tipoUsuario === "SOLICITANTE") {
+          navigate("/dashboard/solicitante", { replace: true });
+        } else if (tipoUsuario === "ENTREGADOR") {
+          navigate("/dashboard/entregador", { replace: true });
         } else {
-          navigate("/auth/login");
+          navigate("/auth/login", { replace: true });
         }
       }, 2000);
 
     } catch (error) {
-      console.error(error);
-
+      console.error("Erro no login:", error);
       toast.error(
-        error.response?.data?.detail ||
+        error.response?.data?.detail || 
         "Não foi possível entrar. Verifique os dados."
       );
     }
@@ -63,7 +80,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-6xl bg-white rounded-2xl shadow-lg flex">
-        
+
         {/* COLUNA ESQUERDA */}
         <div className="hidden lg:flex w-1/2 flex-col items-center justify-center p-10">
           <img src={LoginImg} alt="Login Illustration" className="w-4/5" />
@@ -80,21 +97,16 @@ export default function Login() {
           </h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-
-            {/* Email */}
+            {/* Usuário */}
             <div>
-              <label className="text-gray-800 text-sm">Email</label>
+              <label className="text-gray-800 text-sm">Usuário</label>
               <input
-                type="email"
-                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
-                  errors.email ? "border border-red-500" : ""
-                }`}
-                placeholder="Digite o seu email"
-                {...register("email")}
+                type="text"
+                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${errors.username ? "border border-red-500" : ""}`}
+                placeholder="Digite seu usuário"
+                {...register("username")}
               />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-              )}
+              {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>}
             </div>
 
             {/* Senha */}
@@ -103,14 +115,10 @@ export default function Login() {
               <input
                 type="password"
                 {...register("password")}
-                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
-                  errors.password ? "border border-red-500" : ""
-                }`}
+                className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${errors.password ? "border border-red-500" : ""}`}
                 placeholder="Digite a sua senha"
               />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
             </div>
 
             {/* Botão Entrar */}
@@ -122,10 +130,7 @@ export default function Login() {
             </button>
 
             {/* Esqueceu a senha */}
-            <Link
-              to="/auth/esqueceu-senha"
-              className="text-blue-600 text-sm text-center hover:text-blue-400"
-            >
+            <Link to="/auth/esqueceu-senha" className="text-blue-600 text-sm text-center hover:text-blue-400">
               Esqueceu a senha?
             </Link>
 
@@ -136,13 +141,9 @@ export default function Login() {
             </div>
 
             {/* Criar conta */}
-            <Link
-              to="/auth/criar-conta"
-              className="cursor-pointer self-center mt-4 bg-blue-700 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-900 transition"
-            >
+            <Link to="/auth/criar-conta" className="cursor-pointer self-center mt-4 bg-blue-700 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-900 transition">
               Criar conta
             </Link>
-
           </form>
         </div>
       </div>
