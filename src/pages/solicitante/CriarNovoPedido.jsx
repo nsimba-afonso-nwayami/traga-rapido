@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-hot-toast";
@@ -14,9 +15,12 @@ export default function CriarNovoPedido() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(pedidoSchema),
@@ -51,6 +55,8 @@ export default function CriarNovoPedido() {
       console.log("Pedido criado:", response.data);
 
       toast.success("Pedido criado com sucesso!", { duration: 3000 });
+      reset();
+      navigate("/dashboard/solicitante/pedidos");
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
 
