@@ -3,9 +3,9 @@ import { api } from "./api";
 export async function completarCadastroSolicitante(payload) {
   const formData = new FormData();
 
-  formData.append("foto_rosto", payload.fotoRosto || "");
-  formData.append("doc_frente", payload.biFrente || "");
-  formData.append("doc_verso", payload.biVerso || "");
+  formData.append("foto_rosto", payload.fotoRosto || null);
+  formData.append("doc_frente", payload.biFrente || null);
+  formData.append("doc_verso", payload.biVerso || null);
   formData.append("morada", payload.morada);
   formData.append("usuario", payload.userId);
   
