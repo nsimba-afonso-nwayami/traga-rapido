@@ -1,8 +1,9 @@
 import { api } from "./api";
 
 export async function loginService(payload) {
-  return api.post("/usuarios/login/", {
-    username: payload.email,
+  // Agora envia username diretamente
+  return api.post("/auth/token/", {
+    username: payload.username,
     password: payload.password,
   });
 }
