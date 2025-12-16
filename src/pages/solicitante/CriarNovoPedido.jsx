@@ -26,29 +26,23 @@ export default function CriarNovoPedido() {
     setLoading(true);
 
     try {
-      const origemCoord = await geocodeAddress(data.origem);
-      const destinoCoord = await geocodeAddress(data.destino);
-
-      if (!origemCoord || !destinoCoord) {
-        toast.error("Endereço de origem ou destino não encontrado.");
-        return;
-      }
-
       const payload = {
         titulo: data.titulo,
         descricao: data.descricao,
-        tipo_item: data.tipo_item || "",
+        tipo_item: "", // campo obrigatório, mas vazio
         peso_kg: data.peso_kg ? Number(data.peso_kg) : null,
-        tamanho: data.tamanho || "",
-        urgencia: data.urgencia || null, // agora é string: Normal, Urgente ou Express
+        tamanho: "", // campo obrigatório, mas vazio
+        urgencia: data.urgencia || null,
         origem_endereco: data.origem,
-        origem_latitude: Number(origemCoord.lat),
-        origem_longitude: Number(origemCoord.lon),
+        origem_latitude: null, // coordenadas não usadas
+        origem_longitude: null,
         destino_endereco: data.destino,
-        destino_latitude: Number(destinoCoord.lat),
-        destino_longitude: Number(destinoCoord.lon),
-        valor_sugerido: data.valor_sugerido ? Number(data.valor_sugerido) : null,
-        solicitante: 18, // 🔹 trocar pelo ID real do usuário logado
+        destino_latitude: null,
+        destino_longitude: null,
+        valor_sugerido: data.valor_sugerido
+          ? Number(data.valor_sugerido)
+          : null,
+        solicitante: 18, // trocar pelo ID real do usuário logado
       };
 
       console.log("Payload do pedido:", payload);
@@ -84,13 +78,20 @@ export default function CriarNovoPedido() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      <SidebarSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <SidebarSolicitante
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        <HeaderSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <HeaderSolicitante
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+
         <main className="flex-1 overflow-auto p-4 sm:p-6">
           <div className="max-w-4xl mx-auto bg-white border border-gray-300 rounded-xl shadow p-6 sm:p-8 space-y-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
               {/* Título */}
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">
@@ -100,9 +101,15 @@ export default function CriarNovoPedido() {
                   type="text"
                   {...register("titulo")}
                   placeholder="Ex: Documentos Urgentes"
-                  className={`w-full p-2 border rounded-lg outline-none ${errors.titulo ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg ${
+                    errors.titulo ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
-                {errors.titulo && <p className="text-red-500 text-sm">{errors.titulo.message}</p>}
+                {errors.titulo && (
+                  <p className="text-red-500 text-sm">
+                    {errors.titulo.message}
+                  </p>
+                )}
               </div>
 
               {/* Descrição */}
@@ -114,72 +121,69 @@ export default function CriarNovoPedido() {
                   rows="4"
                   {...register("descricao")}
                   placeholder="Detalhe o conteúdo e as instruções..."
-                  className={`w-full p-2 border rounded-lg outline-none resize-none ${errors.descricao ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg resize-none ${
+                    errors.descricao ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
-                {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao.message}</p>}
+                {errors.descricao && (
+                  <p className="text-red-500 text-sm">
+                    {errors.descricao.message}
+                  </p>
+                )}
               </div>
 
               <hr className="my-8 border-gray-200" />
 
-              {/* Tipo de item */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Tipo do Item</label>
-                <input
-                  type="text"
-                  {...register("tipo_item")}
-                  placeholder="Ex: Documentos, Encomenda"
-                  className={`w-full p-2 border rounded-lg outline-none ${errors.tipo_item ? "border-red-500" : "border-gray-300"}`}
-                />
-              </div>
-
               {/* Peso */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Peso (kg)</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Peso (kg)
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   {...register("peso_kg")}
                   placeholder="Ex: 2.5"
-                  className={`w-full p-2 border rounded-lg outline-none ${errors.peso_kg ? "border-red-500" : "border-gray-300"}`}
-                />
-              </div>
-
-              {/* Tamanho */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Tamanho</label>
-                <input
-                  type="text"
-                  {...register("tamanho")}
-                  placeholder="Ex: Pequeno, Médio, Grande"
-                  className={`w-full p-2 border rounded-lg outline-none ${errors.tamanho ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg ${
+                    errors.peso_kg ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
               </div>
 
               {/* Urgência */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Urgência</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Urgência
+                </label>
                 <select
                   {...register("urgencia")}
-                  className={`w-full p-2 border rounded-lg outline-none ${errors.urgencia ? "border-red-500" : "border-gray-300"}`}
                   defaultValue=""
+                  className={`w-full p-2 border rounded-lg ${
+                    errors.urgencia ? "border-red-500" : "border-gray-300"
+                  }`}
                 >
-                  <option value="" disabled>Selecione a urgência</option>
-                  <option value="Normal">Normal</option>
-                  <option value="Urgente">Urgente</option>
-                  <option value="Express">Express</option>
+                  <option value="" disabled>
+                    Selecione a urgência
+                  </option>
+                  <option value="NORMAL">Normal</option>
+                  <option value="URGENTE">Urgente</option>
+                  <option value="EXPRESS">Express</option>
                 </select>
-                {errors.urgencia && <p className="text-red-500 text-sm">{errors.urgencia.message}</p>}
               </div>
 
               {/* Valor sugerido */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Valor sugerido (AKZ)</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Valor sugerido (AKZ)
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   {...register("valor_sugerido")}
                   placeholder="Ex: 1500"
-                  className={`w-full p-2 border rounded-lg outline-none ${errors.valor_sugerido ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg ${
+                    errors.valor_sugerido ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
               </div>
 
@@ -188,31 +192,31 @@ export default function CriarNovoPedido() {
               {/* Origem */}
               <div className="space-y-1">
                 <label className="text-sm font-bold text-blue-700">
-                  <i className="fas fa-map-marker-alt mr-2"></i>
                   Local de Origem <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows="3"
                   {...register("origem")}
                   placeholder="Digite o endereço completo de origem"
-                  className={`w-full p-2 border rounded-lg outline-none resize-none ${errors.origem ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg resize-none ${
+                    errors.origem ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
-                {errors.origem && <p className="text-red-500 text-sm">{errors.origem.message}</p>}
               </div>
 
               {/* Destino */}
               <div className="space-y-1">
                 <label className="text-sm font-bold text-blue-700">
-                  <i className="fas fa-route mr-2"></i>
                   Local de Destino <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows="3"
                   {...register("destino")}
                   placeholder="Digite o endereço completo de destino"
-                  className={`w-full p-2 border rounded-lg outline-none resize-none ${errors.destino ? "border-red-500" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg resize-none ${
+                    errors.destino ? "border-red-500" : "border-gray-300"
+                  }`}
                 />
-                {errors.destino && <p className="text-red-500 text-sm">{errors.destino.message}</p>}
               </div>
 
               {/* Botão */}
@@ -220,13 +224,15 @@ export default function CriarNovoPedido() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md transition flex items-center ${loading ? "cursor-not-allowed opacity-70" : "hover:bg-blue-700"}`}
+                  className={`px-6 py-3 bg-blue-600 text-white font-bold rounded-lg ${
+                    loading
+                      ? "opacity-70 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                  }`}
                 >
-                  <i className="fas fa-check-circle mr-3 text-lg"></i>
                   {loading ? "Enviando..." : "Enviar Pedido"}
                 </button>
               </div>
-
             </form>
           </div>
         </main>

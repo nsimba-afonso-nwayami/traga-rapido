@@ -16,13 +16,13 @@ export const pedidoSchema = yup.object().shape({
   tamanho: yup.string().optional(),
   urgencia: yup
     .string()
-    .oneOf(["Normal", "Urgente", "Express"], "Escolha uma urgência válida")
-    .nullable()
-    .optional(),
+    .required("Informe a urgência")
+    .oneOf(["NORMAL", "URGENTE", "EXPRESS"], "Escolha uma urgência válida")
+    .nullable(),
   valor_sugerido: yup
     .number()
+    .required("Informe o valor sugerido")
     .typeError("Valor sugerido deve ser um número")
     .positive("Valor deve ser positivo")
-    .nullable()
-    .optional(),
+    .nullable(),
 });
