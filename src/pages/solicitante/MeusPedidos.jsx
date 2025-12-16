@@ -1,225 +1,279 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
+import { listarPedidosPorSolicitante, eliminarPedido } from "../../services/pedidoService";
+
+// Função utilitária para formatar o status com cor
+const getStatusClasses = (status) => {
+  switch (status) {
+    case "Em Rota":
+      return "bg-yellow-500/20 text-yellow-800";
+    case "Concluído":
+      return "bg-green-500/20 text-green-800";
+    case "Cancelado":
+      return "bg-red-500/20 text-red-800";
+    case "Pendente":
+    default:
+      return "bg-blue-500/20 text-blue-800";
+  }
+};
 
 export default function MeusPedidos() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
+  const SOLICITANTE_ID = 18; // **IMPORTANTE**: Substituir pelo usuário logado real
+
+  // Simula um estado para controlar se há mais a carregar (para fins de UI)
+  const [hasMore, setHasMore] = useState(true); 
+
+  useEffect(() => {
+    async function carregarPedidos() {
+      try {
+        let meusPedidos = await listarPedidosPorSolicitante(SOLICITANTE_ID);
+
+        // Ordena do mais recente ao mais antigo usando criado_em
+        meusPedidos.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+
+        setPedidos(meusPedidos);
+        // Exemplo: Se tivéssemos paginação, setHasMore seria baseado no número total vs. carregado
+        // Por enquanto, apenas simula que há mais
+        if (meusPedidos.length < 20) { // Exemplo de condição
+            setHasMore(false);
+        } else {
+            setHasMore(true);
+        }
+
+      } catch (error) {
+        console.error("Erro ao carregar pedidos:", error);
+        toast.error("Erro ao carregar pedidos");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarPedidos();
+  }, []);
+
+  async function handleDelete(id) {
+    if (!window.confirm("Tem certeza que deseja eliminar este pedido?")) return;
+
+    try {
+      await eliminarPedido(id);
+      setPedidos(prev => prev.filter(pedido => pedido.id !== id));
+      toast.success("Pedido eliminado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao eliminar pedido:", error);
+      toast.error("Não foi possível eliminar o pedido");
+    }
+  }
+
+  // Função fictícia para simular o clique do "Ver Mais"
+  function handleVerMais() {
+    toast.success("Simulando o carregamento de mais pedidos...");
+    // Aqui viria a lógica real para buscar a próxima página de pedidos
+    // Por exemplo: loadNextPageOfPedidos(SOLICITANTE_ID, currentPage + 1);
+  }
+
+  // Filtrar e pesquisar pedidos
+  const pedidosFiltrados = pedidos
+    .filter((pedido) => {
+      const busca = search.toLowerCase();
+      const titulo = pedido.titulo.toLowerCase();
+      const origem = (pedido.origem_endereco || "").toLowerCase();
+      const destino = (pedido.destino_endereco || "").toLowerCase();
+      const entregador = (pedido.entregador || "").toLowerCase();
+
+      const matchesSearch =
+        titulo.includes(busca) ||
+        origem.includes(busca) ||
+        destino.includes(busca) ||
+        entregador.includes(busca);
+
+      const matchesStatus = statusFilter ? (pedido.status || "Pendente") === statusFilter : true;
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <SidebarSolicitante 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
-      />
+      <SidebarSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        {/* Header */}
-        <HeaderSolicitante
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        <HeaderSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        {/* MAIN AREA */}
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8 sm:space-y-10">
-          {/* BARRA DE PESQUISA E FILTROS LAYOUT */}
-          <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
-              {/* BARRA DE PESQUISA */}
-              <div className="relative w-full sm:w-1/3 min-w-[200px] shrink-0">
+
+          {/* Barra de pesquisa e filtros */}
+          <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Filtrar Pedidos</h3>
+            <div className="flex flex-col md:flex-row gap-4 items-stretch">
+              {/* Campo de Busca */}
+              <div className="relative w-full md:w-1/3 min-w-[200px] shrink-0">
                 <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                 <input
                   type="text"
-                  placeholder="Buscar por Título ou Cidade..."
-                  className="w-full p-2 pl-9 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por Título, Cidade ou Entregador..."
+                  className="w-full p-2 pl-9 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
-              {/* FILTROS (OPCIONAL) */}
-              <select className="w-full sm:w-auto p-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-700">
-                <option>Filtrar por Status</option>
-                <option>Em Rota</option>
-                <option>Pendente</option>
-                <option>Concluído</option>
+              {/* Filtro de Status */}
+              <select
+                className="w-full md:w-auto p-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">Status (Todos)</option>
+                <option value="Em Rota">Em Rota</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Cancelado">Cancelado</option>
               </select>
 
-              <button className="w-full sm:w-auto p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 text-sm">
-                <i className="fas fa-filter mr-2"></i>
-                Aplicar Filtro
-              </button>
+              {/* Botão de Novo Pedido */}
+              <Link
+                to="/dashboard/solicitante/novo-pedido"
+                className={`w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg transition duration-150 text-sm flex items-center justify-center 
+                   ${
+                    loading
+                      ? "opacity-70 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                   }
+                `}
+              >
+                <i className="fas fa-plus-circle mr-2"></i>
+                Novo Pedido
+              </Link>
             </div>
           </div>
 
-          {/* TABELA DE PEDIDOS LAYOUT */}
-          <div className="overflow-x-auto w-full border border-gray-300 rounded-xl shadow">
-            <table className="min-w-[800px] w-full table-auto border-collapse bg-white">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-300 text-sm">
-                  <th className="p-3 text-left whitespace-nowrap">ID</th>
-                  <th className="p-3 text-left whitespace-nowrap">Título</th>
-                  <th className="p-3 text-left whitespace-nowrap">Origem</th>
-                  <th className="p-3 text-left whitespace-nowrap">Destino</th>
-                  <th className="p-3 text-left whitespace-nowrap">
-                    Entregador
-                  </th>
-                  <th className="p-3 text-left whitespace-nowrap">Status</th>
-                  <th className="p-3 text-center whitespace-nowrap">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Linha de Exemplo 1 (Em Andamento/Em Rota) */}
-                <tr className="border-b border-gray-200 hover:bg-gray-50 text-sm">
-                  <td className="p-3 whitespace-nowrap font-medium text-gray-700">
-                    #1001
-                  </td>
-                  <td className="p-3 whitespace-nowrap font-semibold">
-                    Documentos de Venda
-                  </td>
-                  <td className="p-3 whitespace-nowrap">São Paulo/SP</td>
-                  <td className="p-3 whitespace-nowrap">Rio de Janeiro/RJ</td>
-                  <td className="p-3 whitespace-nowrap text-gray-600">
-                    Entregador Exemplo 1
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-500/40 text-blue-800">
-                      Em Rota
-                    </span>
-                  </td>
-                  <td className="p-3 text-center whitespace-nowrap flex justify-center gap-2">
-                    <button
-                      className="text-blue-700 hover:text-blue-500 text-base"
-                      title="Ver Detalhes"
-                    >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button
-                      className="text-gray-500 hover:text-gray-700 text-base"
-                      title="Rastrear"
-                    >
-                      <i className="fas fa-map-marker-alt"></i>
-                    </button>
-                    <button
-                      className="text-red-500 hover:text-red-400 text-base"
-                      title="Cancelar Pedido"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                {/* Linha de Exemplo 2 (Pendente) */}
-                <tr className="border-b border-gray-200 hover:bg-gray-50 text-sm">
-                  <td className="p-3 whitespace-nowrap font-medium text-gray-700">
-                    #1002
-                  </td>
-                  <td className="p-3 whitespace-nowrap font-semibold">
-                    Peça de Reposição Urgente
-                  </td>
-                  <td className="p-3 whitespace-nowrap">Belo Horizonte/MG</td>
-                  <td className="p-3 whitespace-nowrap">Curitiba/PR</td>
-                  <td className="p-3 whitespace-nowrap text-gray-600">
-                    Aguardando
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-500/40 text-yellow-800">
-                      Pendente
-                    </span>
-                  </td>
-                  <td className="p-3 text-center whitespace-nowrap flex justify-center gap-2">
-                    <button
-                      className="text-blue-700 hover:text-blue-500 text-base"
-                      title="Ver Detalhes"
-                    >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button
-                      className="text-gray-400 text-base cursor-not-allowed"
-                      disabled
-                      title="Rastrear (Não disponível)"
-                    >
-                      <i className="fas fa-map-marker-alt"></i>
-                    </button>
-                    <button
-                      className="text-red-500 hover:text-red-400 text-base"
-                      title="Cancelar Pedido"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                {/* Linha de Exemplo 3 (Concluído) */}
-                <tr className="border-b border-gray-200 hover:bg-gray-50 text-sm">
-                  <td className="p-3 whitespace-nowrap font-medium text-gray-700">
-                    #1003
-                  </td>
-                  <td className="p-3 whitespace-nowrap font-semibold">
-                    Entrega de Equipamento
-                  </td>
-                  <td className="p-3 whitespace-nowrap">Campinas/SP</td>
-                  <td className="p-3 whitespace-nowrap">Porto Alegre/RS</td>
-                  <td className="p-3 whitespace-nowrap text-gray-600">
-                    Entregador Exemplo 2
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-500/40 text-green-800">
-                      Concluído
-                    </span>
-                  </td>
-                  <td className="p-3 text-center whitespace-nowrap flex justify-center gap-2">
-                    <button
-                      className="text-blue-700 hover:text-blue-500 text-base"
-                      title="Ver Detalhes"
-                    >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button
-                      className="text-gray-500 hover:text-gray-700 text-base"
-                      title="Rastrear"
-                    >
-                      <i className="fas fa-map-marker-alt"></i>
-                    </button>
-                    <button
-                      className="text-gray-400 text-base cursor-not-allowed"
-                      disabled
-                      title="Cancelamento (Não permitido)"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Lista de Cards de Pedidos */}
+          <div className="space-y-4">
+            {loading && (
+              <p className="text-center text-gray-500 p-8 bg-white rounded-xl shadow">
+                Carregando seus pedidos de entrega...
+              </p>
+            )}
+
+            {!loading && pedidosFiltrados.length === 0 && (
+              <p className="text-center text-gray-500 p-8 bg-white rounded-xl shadow">
+                Nenhum pedido de entrega encontrado com os filtros aplicados.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {pedidosFiltrados.map((pedido) => (
+                <div
+                  key={pedido.id}
+                  className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col justify-between"
+                >
+                  <div className="p-5 space-y-4">
+                    {/* Título e Status */}
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-lg font-bold text-gray-800 truncate pr-2" title={pedido.titulo}>
+                        {pedido.titulo}
+                      </h4>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusClasses(pedido.status || "Pendente")}`}
+                      >
+                        {pedido.status || "Pendente"}
+                      </span>
+                    </div>
+
+                    <div className="text-sm text-gray-500 space-y-1 border-t pt-3">
+                      {/* Origem */}
+                      <div className="flex items-center">
+                        <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                        <span className="font-medium text-gray-700">Origem:</span> {pedido.origem_endereco}
+                      </div>
+
+                      {/* Destino */}
+                      <div className="flex items-center">
+                        <i className="fas fa-map-marked-alt text-green-500 mr-2"></i>
+                        <span className="font-medium text-gray-700">Destino:</span> {pedido.destino_endereco}
+                      </div>
+
+                      {/* Entregador */}
+                      <div className="flex items-center">
+                        <i className="fas fa-motorcycle text-blue-500 mr-2"></i>
+                        <span className="font-medium text-gray-700">Entregador:</span> {pedido.entregador || "Aguardando"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer e Ações */}
+                  <div className="p-5 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
+                    <p className="text-xs text-gray-400">
+                      Criado em: {pedido.criado_em ? format(new Date(pedido.criado_em), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
+                    </p>
+                    <div className="flex gap-3">
+                      <Link
+                        to={`/solicitante/pedidos/${pedido.id}`}
+                        className="text-blue-700 hover:text-blue-500 text-base"
+                        title="Ver Detalhes do Pedido"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </Link>
+
+                      {/* Botão de editar */}
+                      {pedido.status !== "Em Rota" && pedido.status !== "Concluído" && (
+                        <Link
+                          to={`/solicitante/pedidos/editar/${pedido.id}`}
+                          className="text-yellow-600 hover:text-yellow-500 text-base"
+                          title="Editar Pedido"
+                        >
+                          <i className="fas fa-edit"></i>
+                        </Link>
+                      )}
+
+                      {/* Botão de deletar */}
+                      {pedido.status === "Pendente" && (
+                        <button
+                          onClick={() => handleDelete(pedido.id)}
+                          className="text-red-500 hover:text-red-400 text-base"
+                          title="Eliminar Pedido"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* BOTÃO VER MAIS (ADICIONADO NO FINAL DA LISTA DE CARDS) */}
+            {!loading && pedidosFiltrados.length > 0 && hasMore && (
+              <div className="mt-6 w-full flex justify-center">
+                <button
+                  onClick={handleVerMais}
+                  className="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg border border-gray-300 hover:bg-gray-300 transition duration-150 text-sm flex items-center justify-center"
+                >
+                  <i className="fas fa-angle-down mr-2"></i>
+                  Ver Mais Pedidos
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* PAGINAÇÃO LAYOUT */}
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-gray-300">
-            <p className="text-gray-600 text-sm mb-4 sm:mb-0">
-              Mostrando 1 a 3 de X registros
+          {/* Informação de Contagem (Movida para baixo do botão Ver Mais, mas separada) */}
+          <div className="flex justify-end pt-4 border-t border-gray-300">
+            <p className="text-gray-600 text-sm">
+              Mostrando {pedidosFiltrados.length} pedidos.
             </p>
-            <div className="flex items-center gap-2">
-              {/* Botão Anterior */}
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200 disabled:opacity-50">
-                <i className="fas fa-chevron-left"></i> Anterior
-              </button>
-              {/* Botões de Página */}
-              <button className="px-3 py-1 border rounded-lg text-sm bg-blue-600 text-white font-semibold">
-                1
-              </button>{" "}
-              {/* Página Ativa */}
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200">
-                2
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200">
-                3
-              </button>
-              {/* Botão Próximo */}
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200 disabled:opacity-50">
-                Próximo <i className="fas fa-chevron-right"></i>
-              </button>
-            </div>
           </div>
-          {/* FIM PAGINAÇÃO */}
         </main>
       </div>
     </div>
