@@ -220,7 +220,7 @@ export default function MeusPedidos() {
                     </p>
                     <div className="flex gap-3">
                       <Link
-                        to={`/solicitante/pedidos/${pedido.id}`}
+                        to={`/dashboard/solicitante/detalhes-pedido/${pedido.id}`}
                         className="text-blue-700 hover:text-blue-500 text-base"
                         title="Ver Detalhes do Pedido"
                       >
