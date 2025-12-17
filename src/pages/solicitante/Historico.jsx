@@ -1,177 +1,131 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 
+// --- DADOS MOCKADOS PARA O HISTÓRICO ---
+const mockHistorico = [
+  { 
+    id: "#1007", 
+    titulo: "Entrega de Documentos", 
+    origem: "Maianga, Luanda", 
+    destino: "Talatona, Luanda", 
+    data: "20/11/2025", 
+    valor: "AOA 5.500", 
+    status: "Concluído" 
+  },
+  { 
+    id: "#1008", 
+    titulo: "Pacote de E-commerce", 
+    origem: "Viana", 
+    destino: "Mutamba", 
+    data: "15/11/2025", 
+    valor: "AOA 0.00", 
+    status: "Cancelado" 
+  },
+  { 
+    id: "#1009", 
+    titulo: "Chaves de Residência", 
+    origem: "Benfica", 
+    destino: "Alvalade", 
+    data: "10/11/2025", 
+    valor: "AOA 2.300", 
+    status: "Concluído" 
+  },
+];
+
 export default function HistoricoPedidos() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <SidebarSolicitante 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
-      />
+      <SidebarSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        {/* Header */}
-        <HeaderSolicitante
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        <HeaderSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        {/* MAIN AREA */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8 sm:space-y-10">
-          {/* BARRA DE PESQUISA E FILTROS LAYOUT */}
-          <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
-              {/* BARRA DE PESQUISA */}
-              <div className="relative w-full sm:w-1/3 min-w-[200px] shrink-0">
-                <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+        <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8">
+          <header>
+            <h2 className="text-2xl font-bold text-gray-800">Histórico de Pedidos</h2>
+            <p className="text-gray-500">Consulte todas as suas entregas finalizadas ou canceladas.</p>
+          </header>
+
+          {/* BARRA DE PESQUISA E FILTROS */}
+          <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow-lg">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 <input
                   type="text"
-                  placeholder="Buscar por Título ou Cidade..."
-                  className="w-full p-2 pl-9 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                  placeholder="Buscar por ID, título ou destino..."
+                  className="w-full p-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-
-              {/* FILTROS (OPCIONAL) */}
-              <select className="w-full sm:w-auto p-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-700">
-                <option>Filtrar por Status</option>
-                <option>Concluído</option>
-                <option>Cancelado</option>
+              <select className="p-2 border border-gray-300 rounded-lg bg-white text-gray-700 outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Todos os Status</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Cancelado">Cancelado</option>
               </select>
-
-              <button className="w-full sm:w-auto p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 text-sm">
-                <i className="fas fa-filter mr-2"></i>
-                Aplicar Filtro
-              </button>
             </div>
           </div>
 
-          {/* TABELA DE HISTÓRICO LAYOUT */}
-          <div className="overflow-x-auto w-full border border-gray-300 rounded-xl shadow">
-            <table className="min-w-[800px] w-full table-auto border-collapse bg-white">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-300 text-sm">
-                  <th className="p-3 text-left whitespace-nowrap">ID</th>
-                  <th className="p-3 text-left whitespace-nowrap">Título</th>
-                  <th className="p-3 text-left whitespace-nowrap">Origem</th>
-                  <th className="p-3 text-left whitespace-nowrap">Destino</th>
-                  <th className="p-3 text-left whitespace-nowrap">
-                    Data Conclusão
-                  </th>
-                  <th className="p-3 text-left whitespace-nowrap">
-                    Valor Final
-                  </th>
-                  <th className="p-3 text-left whitespace-nowrap">Status</th>
-                  <th className="p-3 text-center whitespace-nowrap">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Linha de Exemplo 1 (Concluído) */}
-                <tr className="border-b border-gray-200 hover:bg-gray-50 text-sm">
-                  <td className="p-3 whitespace-nowrap font-medium text-gray-700">
-                    #1007
-                  </td>
-                  <td className="p-3 whitespace-nowrap font-semibold">
-                    Entrega de Documentos
-                  </td>
-                  <td className="p-3 whitespace-nowrap">São Paulo/SP</td>
-                  <td className="p-3 whitespace-nowrap">Rio de Janeiro/RJ</td>
-                  <td className="p-3 whitespace-nowrap">2025-11-20</td>
-                  <td className="p-3 whitespace-nowrap text-green-700 font-semibold">
-                    R$ 55.00
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-500/40 text-green-800">
-                      Concluído
+          {/* LISTA DE CARDS DE HISTÓRICO */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mockHistorico.map((pedido) => (
+              <div key={pedido.id} className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className="text-xs font-mono text-blue-600 font-bold">{pedido.id}</span>
+                      <h4 className="font-bold text-gray-800 truncate w-40">{pedido.titulo}</h4>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                      pedido.status === 'Concluído' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {pedido.status}
                     </span>
-                  </td>
-                  <td className="p-3 text-center whitespace-nowrap flex justify-center gap-2">
-                    <button
-                      className="text-blue-700 hover:text-blue-500 text-base"
-                      title="Ver Detalhes"
-                    >
-                      <i className="fas fa-eye"></i>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                    <p className="flex items-center"><i className="fas fa-calendar-alt w-5 text-gray-400"></i> {pedido.data}</p>
+                    <p className="flex items-center"><i className="fas fa-map-marker-alt w-5 text-red-400"></i> <span className="truncate">{pedido.origem}</span></p>
+                    <p className="flex items-center"><i className="fas fa-flag w-5 text-green-400"></i> <span className="truncate">{pedido.destino}</span></p>
+                    <p className="flex items-center font-bold text-gray-800">
+                      <i className="fas fa-coins w-5 text-yellow-500"></i> {pedido.valor}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t border-gray-100">
+                    <button className="flex-1 py-2 bg-gray-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors">
+                      <i className="fas fa-eye mr-1"></i> Detalhes
                     </button>
-                    <button
-                      className="text-gray-500 hover:text-gray-700 text-base"
-                      title="Gerar Recibo"
-                    >
-                      <i className="fas fa-receipt"></i>
-                    </button>
-                  </td>
-                </tr>
-                {/* Linha de Exemplo 2 (Cancelado) */}
-                <tr className="border-b border-gray-200 hover:bg-gray-50 text-sm">
-                  <td className="p-3 whitespace-nowrap font-medium text-gray-700">
-                    #1008
-                  </td>
-                  <td className="p-3 whitespace-nowrap font-semibold">
-                    Entrega Cancelada
-                  </td>
-                  <td className="p-3 whitespace-nowrap">Salvador/BA</td>
-                  <td className="p-3 whitespace-nowrap">Recife/PE</td>
-                  <td className="p-3 whitespace-nowrap">2025-11-15</td>
-                  <td className="p-3 whitespace-nowrap text-gray-500">
-                    R$ 0.00
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-500/40 text-red-800">
-                      Cancelado
-                    </span>
-                  </td>
-                  <td className="p-3 text-center whitespace-nowrap flex justify-center gap-2">
-                    <button
-                      className="text-blue-700 hover:text-blue-500 text-base"
-                      title="Ver Detalhes"
-                    >
-                      <i className="fas fa-eye"></i>
-                    </button>
-                    <button
-                      className="text-gray-400 text-base cursor-not-allowed"
-                      disabled
-                      title="Recibo indisponível"
-                    >
-                      <i className="fas fa-receipt"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    {pedido.status === "Concluído" && (
+                      <button className="flex-1 py-2 bg-gray-50 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors">
+                        <i className="fas fa-receipt mr-1"></i> Recibo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* PAGINAÇÃO LAYOUT */}
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-gray-300">
-            <p className="text-gray-600 text-sm mb-4 sm:mb-0">
-              Mostrando 1 a 10 de X registros
-            </p>
-            <div className="flex items-center gap-2">
-              {/* Botão Anterior */}
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200 disabled:opacity-50">
-                <i className="fas fa-chevron-left"></i> Anterior
-              </button>
-              {/* Botões de Página */}
-              <button className="px-3 py-1 border rounded-lg text-sm bg-blue-600 text-white font-semibold">
-                1
-              </button>{" "}
-              {/* Página Ativa */}
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200">
-                2
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200">
-                3
-              </button>
-              {/* Botão Próximo */}
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-200 disabled:opacity-50">
-                Próximo <i className="fas fa-chevron-right"></i>
-              </button>
-            </div>
+          {/* BOTÃO VER MAIS 100% LARGURA */}
+          <div className="pt-4">
+            <button 
+              className="w-full py-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
+              onClick={() => alert("Carregando mais registros...")}
+            >
+              <i className="fas fa-plus-circle"></i>
+              VER MAIS REGISTROS
+            </button>
           </div>
-          {/* FIM PAGINAÇÃO */}
+
+          <footer className="text-center text-gray-400 text-xs pb-10">
+            Mostrando {mockHistorico.length} de 150 registros encontrados.
+          </footer>
         </main>
       </div>
     </div>
