@@ -45,11 +45,6 @@ export default function HistoricoPedidos() {
         <HeaderSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8">
-          <header>
-            <h2 className="text-2xl font-bold text-gray-800">Histórico de Pedidos</h2>
-            <p className="text-gray-500">Consulte todas as suas entregas finalizadas ou canceladas.</p>
-          </header>
-
           {/* BARRA DE PESQUISA E FILTROS */}
           <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow-lg">
             <div className="flex flex-col md:flex-row gap-4">

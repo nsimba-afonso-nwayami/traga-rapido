@@ -46,7 +46,7 @@ export default function MeusPedidos() {
         setPedidos(meusPedidos);
         // Exemplo: Se tivéssemos paginação, setHasMore seria baseado no número total vs. carregado
         // Por enquanto, apenas simula que há mais
-        if (meusPedidos.length < 20) { // Exemplo de condição
+        if (meusPedidos.length < 2) { // Exemplo de condição
             setHasMore(false);
         } else {
             setHasMore(true);
@@ -256,19 +256,19 @@ export default function MeusPedidos() {
 
             {/* BOTÃO VER MAIS (ADICIONADO NO FINAL DA LISTA DE CARDS) */}
             {!loading && pedidosFiltrados.length > 0 && hasMore && (
-              <div className="mt-6 w-full flex justify-center">
-                <button
+              <div className="pt-4">
+                <button 
+                  className="w-full py-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
                   onClick={handleVerMais}
-                  className="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg border border-gray-300 hover:bg-gray-300 transition duration-150 text-sm flex items-center justify-center"
                 >
-                  <i className="fas fa-angle-down mr-2"></i>
-                  Ver Mais Pedidos
+                  <i className="fas fa-plus-circle"></i>
+                  VER MAIS PEDIDOS
                 </button>
               </div>
             )}
           </div>
 
-          {/* Informação de Contagem (Movida para baixo do botão Ver Mais, mas separada) */}
+          {/* Informação de Contagem */}
           <div className="flex justify-end pt-4 border-t border-gray-300">
             <p className="text-gray-600 text-sm">
               Mostrando {pedidosFiltrados.length} pedidos.
