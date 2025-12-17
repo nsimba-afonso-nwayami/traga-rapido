@@ -18,3 +18,11 @@ export async function listarPedidosPorSolicitante(idSolicitante) {
 export async function eliminarPedido(id) {
   return api.delete(`/pedidos/${id}/`);
 }
+
+// Aceitar um pedido (atribuir ao entregador)
+export function aceitarPedido(pedidoId, entregadorId) {
+  return api.patch(`/pedidos/${pedidoId}/`, {
+    entregador: entregadorId,
+    status: "ACEITO",
+  });
+}
