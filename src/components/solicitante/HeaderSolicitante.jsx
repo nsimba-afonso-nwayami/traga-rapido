@@ -3,7 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function HeaderSolicitante({ sidebarOpen, setSidebarOpen }) {
   const location = useLocation();
-  const { user, loadingAuth } = useAuth(); // pega loadingAuth
+  const { user } = useAuth();
 
   // Títulos automáticos por rota
   const titles = {
@@ -31,15 +31,6 @@ export default function HeaderSolicitante({ sidebarOpen, setSidebarOpen }) {
 
   const currentTitle = titles[location.pathname] || "Painel do Solicitante";
   const currentIcon = icons[location.pathname] || "fas fa-user";
-
-  // Mostra "Carregando..." enquanto o AuthContext ainda inicializa
-  if (loadingAuth) {
-    return (
-      <header className="bg-blue-700/90 border-b border-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-10">
-        <p className="text-white font-bold">Carregando...</p>
-      </header>
-    );
-  }
 
   return (
     <header className="bg-blue-700/90 border-b border-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-10">
