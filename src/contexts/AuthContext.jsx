@@ -1,19 +1,23 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Cria o contexto global de autenticação
 export const AuthContext = createContext(null);
 
-// 🔹 HOOK PERSONALIZADO
+// Hook personalizado para consumir o AuthContext
 export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Provider que envolve a aplicação e fornece estado de autenticação
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
 
+  // Estado do token e do usuário logado
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
 
+  // Ao carregar a aplicação, tenta recuperar os dados do usuário do localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const tipoUsuario = localStorage.getItem("tipoUsuario");
@@ -24,7 +28,7 @@ export function AuthProvider({ children }) {
     if (storedToken && tipoUsuario) {
       setToken(storedToken);
       setUser({
-        id: id ? Number(id) : null,
+        id: id ? Number(id) : null,  // converte o id para número
         tipo: tipoUsuario,
         username,
         email,
@@ -32,6 +36,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Função para fazer login e salvar dados no estado e localStorage
   function login(data) {
     const { access, refresh, tipo, username, email, id } = data;
 
@@ -43,13 +48,9 @@ export function AuthProvider({ children }) {
     localStorage.setItem("userId", id);
 
     setToken(access);
-    setUser({
-      id,
-      tipo,
-      username,
-      email,
-    });
+    setUser({ id, tipo, username, email });
 
+    // Redireciona para o dashboard correto
     if (tipo === "SOLICITANTE") {
       navigate("/dashboard/solicitante", { replace: true });
     } else if (tipo === "ENTREGADOR") {
@@ -57,6 +58,7 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Função para logout: limpa estado, localStorage e redireciona para login
   function logout() {
     localStorage.clear();
     setToken(null);
@@ -64,10 +66,11 @@ export function AuthProvider({ children }) {
     navigate("/auth/login", { replace: true });
   }
 
+  // Provedor que disponibiliza os dados e funções para toda a aplicação
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!token,
+        isAuthenticated: !!token, // true se token existir
         token,
         user,
         login,
