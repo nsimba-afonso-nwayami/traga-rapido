@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function HeaderEntregador({
   sidebarOpen,
@@ -8,6 +9,7 @@ export default function HeaderEntregador({
 }) {
 
   const location = useLocation();
+  const { user } = useAuth();
 
   // Títulos automáticos por rota
   const titles = {
@@ -76,7 +78,7 @@ export default function HeaderEntregador({
         {/* Avatar */}
         <div className="flex items-center gap-3">
           <span className="text-sm opacity-80 hidden sm:block text-white">
-            Entregador
+            {user?.username || "Entregador"}
           </span>
           <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center">
             <i className="fas fa-user text-white text-base"></i>
