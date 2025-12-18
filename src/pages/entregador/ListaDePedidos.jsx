@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
 import { listarPedidos, aceitarPedido } from "../../services/pedidoService";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function ListaDePedidos() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -10,8 +11,9 @@ export default function ListaDePedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aceitandoId, setAceitandoId] = useState(null);
+  const { user } = useAuth();
 
-  const idEntregador = 19; // substituir pelo ID real do entregador logado
+  const idEntregador = user.id;
 
   useEffect(() => {
     async function fetchPedidos() {
