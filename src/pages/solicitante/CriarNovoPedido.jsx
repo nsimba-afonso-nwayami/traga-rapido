@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../../contexts/AuthContext";
 
 import { pedidoSchema } from "../../validations/pedidoSchema";
 import { criarPedido } from "../../services/pedidoService";
@@ -16,6 +17,7 @@ export default function CriarNovoPedido() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const {
     register,
@@ -29,16 +31,22 @@ export default function CriarNovoPedido() {
   const onSubmit = async (data) => {
     setLoading(true);
 
+    if (!user?.id) {
+      toast.error("Usuário não autenticado");
+      setLoading(false);
+      return;
+    }
+
     try {
       const payload = {
         titulo: data.titulo,
         descricao: data.descricao,
-        tipo_item: "", // campo obrigatório, mas vazio
+        tipo_item: "",
         peso_kg: data.peso_kg ? Number(data.peso_kg) : null,
-        tamanho: "", // campo obrigatório, mas vazio
+        tamanho: "",
         urgencia: data.urgencia || null,
         origem_endereco: data.origem,
-        origem_latitude: null, // coordenadas não usadas
+        origem_latitude: null,
         origem_longitude: null,
         destino_endereco: data.destino,
         destino_latitude: null,
@@ -46,37 +54,20 @@ export default function CriarNovoPedido() {
         valor_sugerido: data.valor_sugerido
           ? Number(data.valor_sugerido)
           : null,
-        solicitante: 18, // trocar pelo ID real do usuário logado
+
+        solicitante: user.id,
       };
 
       console.log("Payload do pedido:", payload);
 
       const response = await criarPedido(payload);
-      console.log("Pedido criado:", response.data);
 
       toast.success("Pedido criado com sucesso!", { duration: 3000 });
       reset();
       navigate("/dashboard/solicitante/pedidos");
     } catch (error) {
       console.error("Erro ao criar pedido:", error);
-
-      if (error.response?.data) {
-        console.error(
-          "Erro da API detalhado:",
-          JSON.stringify(error.response.data, null, 2)
-        );
-
-        if (error.response.data.detail) {
-          toast.error("Erro: " + error.response.data.detail);
-        } else {
-          const fieldErrors = Object.entries(error.response.data)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n");
-          toast.error("Erro no envio:\n" + fieldErrors);
-        }
-      } else {
-        toast.error("Erro ao enviar pedido");
-      }
+      toast.error("Erro ao enviar pedido");
     } finally {
       setLoading(false);
     }
