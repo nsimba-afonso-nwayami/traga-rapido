@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function SidebarEntregador({ sidebarOpen, setSidebarOpen }) {
+  const { logout } = useAuth();
+
   return (
     <>
       <aside
@@ -67,10 +70,13 @@ export default function SidebarEntregador({ sidebarOpen, setSidebarOpen }) {
             Configurações
           </Link>
 
-          <Link className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors">
+          <button
+            onClick={logout}
+            className="w-full text-left block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors"
+          >
             <i className="fas fa-sign-out-alt mr-3 text-blue-400"></i>
             Logout
-          </Link>
+          </button>
         </nav>
       </aside>
 
