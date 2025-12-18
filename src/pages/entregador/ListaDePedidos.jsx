@@ -12,6 +12,7 @@ export default function ListaDePedidos() {
   const [loading, setLoading] = useState(true);
   const [aceitandoId, setAceitandoId] = useState(null);
 
+  // Pegando o usuário logado do AuthContext
   const { user } = useAuth();
   const idEntregador = user?.id;
 
@@ -52,9 +53,15 @@ export default function ListaDePedidos() {
     }
   }
 
+  // Ordena os pedidos do mais recente para o mais antigo
+  const pedidosOrdenados = [...pedidos].sort(
+    (a, b) => new Date(b.criado_em) - new Date(a.criado_em)
+  );
+
   return (
     <div className="min-h-screen flex bg-gray-100">
       <SidebarEntregador sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
@@ -67,13 +74,14 @@ export default function ListaDePedidos() {
           <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
             {loading && <p className="text-center text-gray-500">Carregando pedidos...</p>}
 
-            {!loading && pedidos.length > 0 &&
-              pedidos.map((pedido) => (
+            {!loading && pedidosOrdenados.length > 0 &&
+              pedidosOrdenados.map((pedido) => (
                 <div
                   key={pedido.id}
                   className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border-l-4 border-blue-600"
                 >
                   <div className="p-5 sm:p-6 space-y-4">
+                    {/* Informações do pedido */}
                     <div className="flex justify-between items-start border-b pb-3 mb-3">
                       <div>
                         <h4 className="text-xl font-extrabold text-gray-900">{pedido.titulo}</h4>
@@ -88,6 +96,7 @@ export default function ListaDePedidos() {
                       </div>
                     </div>
 
+                    {/* Endereços */}
                     <div className="space-y-3">
                       <div className="flex items-center text-sm">
                         <i className="fas fa-location-arrow mr-3 text-blue-500"></i>
@@ -105,6 +114,7 @@ export default function ListaDePedidos() {
                       </div>
                     </div>
 
+                    {/* Detalhes adicionais */}
                     <div className="pt-3 border-t border-gray-100 text-sm text-gray-500 space-y-1">
                       {pedido.tipo_item && <p>Tipo: {pedido.tipo_item}</p>}
                       {pedido.peso_kg && <p>Peso: {pedido.peso_kg} kg</p>}
@@ -112,6 +122,7 @@ export default function ListaDePedidos() {
                       {pedido.urgencia !== null && <p>Urgência: {pedido.urgencia}</p>}
                     </div>
 
+                    {/* Botão aceitar */}
                     <div className="pt-4 border-t border-gray-100 flex justify-end">
                       <button
                         disabled={aceitandoId === pedido.id}
@@ -127,7 +138,7 @@ export default function ListaDePedidos() {
                 </div>
               ))}
 
-            {!loading && pedidos.length === 0 && (
+            {!loading && pedidosOrdenados.length === 0 && (
               <div className="bg-white p-10 rounded-xl text-center shadow-lg border-l-4 border-blue-600">
                 <i className="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
                 <p className="text-xl font-semibold text-gray-700">
@@ -140,7 +151,7 @@ export default function ListaDePedidos() {
             )}
 
             {/* BOTÃO VER MAIS REGISTROS */}
-            {!loading && pedidos.length > 0 && (
+            {!loading && pedidosOrdenados.length > 0 && (
               <div className="pt-4">
                 <button
                   className="w-full py-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
