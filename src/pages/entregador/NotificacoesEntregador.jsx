@@ -5,7 +5,6 @@ import HeaderEntregador from "../../components/entregador/HeaderEntregador";
 
 export default function NotificacoesEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
 
   // Dados Mockados para Notificações
   const [notificacoes, setNotificacoes] = useState([
@@ -75,8 +74,6 @@ export default function NotificacoesEntregador() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
         {/* MAIN AREA - NOTIFICAÇÕES */}

@@ -7,7 +7,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function ListaDePedidos() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aceitandoId, setAceitandoId] = useState(null);
@@ -66,8 +65,6 @@ export default function ListaDePedidos() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">

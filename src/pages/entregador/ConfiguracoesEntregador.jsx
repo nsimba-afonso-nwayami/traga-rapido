@@ -4,7 +4,6 @@ import HeaderEntregador from "../../components/entregador/HeaderEntregador";
 
 export default function ConfiguracoesEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   // Abas atualizadas: 'pessoal', 'veiculo', 'pagamento', 'seguranca'
   const [activeTab, setActiveTab] = useState('pessoal'); 
 
@@ -56,8 +55,6 @@ export default function ConfiguracoesEntregador() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
 

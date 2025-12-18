@@ -5,7 +5,6 @@ import HeaderEntregador from "../../components/entregador/HeaderEntregador";
 
 export default function NotFoundEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
 
   return (
     <div className="min-h-screen flex bg-gray-100">
@@ -21,8 +20,6 @@ export default function NotFoundEntregador() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
         {/* MAIN AREA - 404 CONTENT */}

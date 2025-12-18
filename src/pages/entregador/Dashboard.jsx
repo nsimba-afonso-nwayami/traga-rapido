@@ -57,8 +57,6 @@ export default function DashboardEntregador() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
         {/* MAIN AREA - DASHBOARD */}

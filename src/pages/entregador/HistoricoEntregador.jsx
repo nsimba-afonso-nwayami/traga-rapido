@@ -4,7 +4,6 @@ import HeaderEntregador from "../../components/entregador/HeaderEntregador";
 
 export default function HistoricoEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   const [filtroPeriodo, setFiltroPeriodo] = useState('Semana'); // Estado para o filtro
 
   // Dados Mockados para o Histórico
@@ -71,8 +70,6 @@ export default function HistoricoEntregador() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
         {/* MAIN AREA - HISTÓRICO */}

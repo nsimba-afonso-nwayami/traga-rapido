@@ -30,7 +30,6 @@ const EntregadorIcon = new L.Icon({
 
 export default function DetalhesCorrida() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
 
   // Dados Estáticos de Localização (Simulação de Luanda)
   const posicaoInicial = [-8.839988, 13.289415]; // Centro aproximado de Luanda
@@ -67,8 +66,6 @@ export default function DetalhesCorrida() {
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
-          isOnline={isOnline}
-          setIsOnline={setIsOnline}
         />
 
         {/* MAIN AREA - DETALHES DA CORRIDA */}
