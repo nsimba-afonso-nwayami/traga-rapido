@@ -12,7 +12,7 @@ import { loginService } from "../../services/loginService";
 export default function Login() {
   const navigate = useNavigate();
 
-  // REDIRECIONA SE JÁ ESTIVER LOGADO
+  // 🔹 REDIRECIONA SE JÁ ESTIVER LOGADO
   useEffect(() => {
     const token = localStorage.getItem("token");
     const tipoUsuario = localStorage.getItem("tipoUsuario");
@@ -46,21 +46,24 @@ export default function Login() {
       const {
         access,
         refresh,
+        id,
         tipo,
         username,
         email,
       } = response.data;
 
-      // Salva corretamente
+      // 💾 SALVA EXATAMENTE O QUE A API RETORNA
       localStorage.setItem("token", access);
       localStorage.setItem("refreshToken", refresh);
+      localStorage.setItem("userId", id);
       localStorage.setItem("tipoUsuario", tipo);
       localStorage.setItem("username", username);
       localStorage.setItem("email", email);
 
       console.log("LocalStorage salvo:", {
         token: access,
-        refresh,
+        refreshToken: refresh,
+        userId: id,
         tipoUsuario: tipo,
         username,
         email,
