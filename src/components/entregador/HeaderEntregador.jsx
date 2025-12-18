@@ -64,17 +64,6 @@ export default function HeaderEntregador({
           </span>
         </Link>
 
-        {/* Status Online/Offline */}
-        <div
-          className={`p-1.5 rounded-full ${
-            isOnline ? "bg-green-500" : "bg-red-500"
-          } transition-colors duration-300 hidden sm:block`}
-        >
-          <span className="text-xs font-bold text-white">
-            {isOnline ? "ONLINE" : "OFFLINE"}
-          </span>
-        </div>
-
         {/* Avatar */}
         <div className="flex items-center gap-3">
           <span className="text-sm opacity-80 hidden sm:block text-white">
