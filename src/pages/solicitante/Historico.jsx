@@ -6,7 +6,10 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
-import { listarPedidosPorSolicitante, eliminarPedido } from "../../services/pedidoService";
+import {
+  listarPedidosPorSolicitante,
+  eliminarPedido,
+} from "../../services/pedidoService";
 
 // Função utilitária para formatar o status com cor
 const getStatusClasses = (status) => {
@@ -30,14 +33,18 @@ export default function HistoricoPedidos() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const SOLICITANTE_ID = user?.id;
 
   useEffect(() => {
+    if (!SOLICITANTE_ID) return; // evita chamada se usuário não carregado
+
     async function carregarPedidos() {
       try {
         const meusPedidos = await listarPedidosPorSolicitante(SOLICITANTE_ID);
-        meusPedidos.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+        meusPedidos.sort(
+          (a, b) => new Date(b.criado_em) - new Date(a.criado_em)
+        );
         setPedidos(meusPedidos);
       } catch (error) {
         console.error("Erro ao carregar pedidos:", error);
@@ -48,14 +55,14 @@ export default function HistoricoPedidos() {
     }
 
     carregarPedidos();
-  }, []);
+  }, [SOLICITANTE_ID]);
 
   async function handleDelete(id) {
     if (!window.confirm("Tem certeza que deseja eliminar este pedido?")) return;
 
     try {
       await eliminarPedido(id);
-      setPedidos(prev => prev.filter(pedido => pedido.id !== id));
+      setPedidos((prev) => prev.filter((pedido) => pedido.id !== id));
       toast.success("Pedido eliminado com sucesso!");
     } catch (error) {
       console.error("Erro ao eliminar pedido:", error);
@@ -78,7 +85,9 @@ export default function HistoricoPedidos() {
         destino.includes(busca) ||
         entregador.includes(busca);
 
-      const matchesStatus = statusFilter ? (pedido.status || "Pendente") === statusFilter : true;
+      const matchesStatus = statusFilter
+        ? (pedido.status || "Pendente") === statusFilter
+        : true;
 
       return matchesSearch && matchesStatus;
     })
@@ -86,10 +95,16 @@ export default function HistoricoPedidos() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      <SidebarSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <SidebarSolicitante
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        <HeaderSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <HeaderSolicitante
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8">
           {/* BARRA DE PESQUISA E FILTROS */}
@@ -131,14 +146,25 @@ export default function HistoricoPedidos() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pedidosFiltrados.map((pedido) => (
-                <div key={pedido.id} className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <div
+                  key={pedido.id}
+                  className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+                >
                   <div className="p-5">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <span className="text-xs font-mono text-blue-600 font-bold">{pedido.id}</span>
-                        <h4 className="font-bold text-gray-800 truncate w-40">{pedido.titulo}</h4>
+                        <span className="text-xs font-mono text-blue-600 font-bold">
+                          {pedido.id}
+                        </span>
+                        <h4 className="font-bold text-gray-800 truncate w-40">
+                          {pedido.titulo}
+                        </h4>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusClasses(pedido.status)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusClasses(
+                          pedido.status
+                        )}`}
+                      >
                         {pedido.status || "Pendente"}
                       </span>
                     </div>
@@ -146,16 +172,23 @@ export default function HistoricoPedidos() {
                     <div className="space-y-2 text-sm text-gray-600 mb-4">
                       <p className="flex items-center">
                         <i className="fas fa-calendar-alt w-5 text-gray-400"></i>{" "}
-                        {pedido.criado_em ? format(new Date(pedido.criado_em), "dd/MM/yyyy", { locale: ptBR }) : "N/A"}
+                        {pedido.criado_em
+                          ? format(new Date(pedido.criado_em), "dd/MM/yyyy", {
+                              locale: ptBR,
+                            })
+                          : "N/A"}
                       </p>
                       <p className="flex items-center">
-                        <i className="fas fa-map-marker-alt w-5 text-red-400"></i> {pedido.origem_endereco}
+                        <i className="fas fa-map-marker-alt w-5 text-red-400"></i>{" "}
+                        {pedido.origem_endereco}
                       </p>
                       <p className="flex items-center">
-                        <i className="fas fa-flag w-5 text-green-400"></i> {pedido.destino_endereco}
+                        <i className="fas fa-flag w-5 text-green-400"></i>{" "}
+                        {pedido.destino_endereco}
                       </p>
                       <p className="flex items-center font-bold text-gray-800">
-                        <i className="fas fa-coins w-5 text-yellow-500"></i> {pedido.valor || "AOA 0.00"}
+                        <i className="fas fa-coins w-5 text-yellow-500"></i>{" "}
+                        {pedido.valor || "AOA 0.00"}
                       </p>
                     </div>
 

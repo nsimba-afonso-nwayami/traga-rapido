@@ -7,7 +7,10 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
-import { listarPedidosPorSolicitante, eliminarPedido } from "../../services/pedidoService";
+import {
+  listarPedidosPorSolicitante,
+  eliminarPedido,
+} from "../../services/pedidoService";
 
 // Função utilitária para formatar o status com cor
 const getStatusClasses = (status) => {
@@ -35,25 +38,19 @@ export default function MeusPedidos() {
   const SOLICITANTE_ID = user?.id;
 
   // Simula um estado para controlar se há mais a carregar (para fins de UI)
-  const [hasMore, setHasMore] = useState(true); 
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
+    if (!SOLICITANTE_ID) return; // evita chamada se usuário ainda não estiver carregado
+
     async function carregarPedidos() {
       try {
-        let meusPedidos = await listarPedidosPorSolicitante(SOLICITANTE_ID);
-
-        // Ordena do mais recente ao mais antigo usando criado_em
-        meusPedidos.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
-
+        const meusPedidos = await listarPedidosPorSolicitante(SOLICITANTE_ID);
+        meusPedidos.sort(
+          (a, b) => new Date(b.criado_em) - new Date(a.criado_em)
+        );
         setPedidos(meusPedidos);
-        // Exemplo: Se tivéssemos paginação, setHasMore seria baseado no número total vs. carregado
-        // Por enquanto, apenas simula que há mais
-        if (meusPedidos.length < 2) { // Exemplo de condição
-            setHasMore(false);
-        } else {
-            setHasMore(true);
-        }
-
+        setHasMore(meusPedidos.length >= 2);
       } catch (error) {
         console.error("Erro ao carregar pedidos:", error);
         toast.error("Erro ao carregar pedidos");
@@ -63,14 +60,14 @@ export default function MeusPedidos() {
     }
 
     carregarPedidos();
-  }, []);
+  }, [SOLICITANTE_ID]);
 
   async function handleDelete(id) {
     if (!window.confirm("Tem certeza que deseja eliminar este pedido?")) return;
 
     try {
       await eliminarPedido(id);
-      setPedidos(prev => prev.filter(pedido => pedido.id !== id));
+      setPedidos((prev) => prev.filter((pedido) => pedido.id !== id));
       toast.success("Pedido eliminado com sucesso!");
     } catch (error) {
       console.error("Erro ao eliminar pedido:", error);
@@ -100,7 +97,9 @@ export default function MeusPedidos() {
         destino.includes(busca) ||
         entregador.includes(busca);
 
-      const matchesStatus = statusFilter ? (pedido.status || "Pendente") === statusFilter : true;
+      const matchesStatus = statusFilter
+        ? (pedido.status || "Pendente") === statusFilter
+        : true;
 
       return matchesSearch && matchesStatus;
     })
@@ -108,16 +107,23 @@ export default function MeusPedidos() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      <SidebarSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <SidebarSolicitante
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        <HeaderSolicitante sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <HeaderSolicitante
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8 sm:space-y-10">
-
           {/* Barra de pesquisa e filtros */}
           <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Filtrar Pedidos</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">
+              Filtrar Pedidos
+            </h3>
             <div className="flex flex-col md:flex-row gap-4 items-stretch">
               {/* Campo de Busca */}
               <div className="relative w-full md:w-1/3 min-w-[200px] shrink-0">
@@ -149,9 +155,9 @@ export default function MeusPedidos() {
                 to="/dashboard/solicitante/novo-pedido"
                 className={`w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg transition duration-150 text-sm flex items-center justify-center 
                    ${
-                    loading
-                      ? "opacity-70 cursor-not-allowed"
-                      : "hover:bg-blue-700"
+                     loading
+                       ? "opacity-70 cursor-not-allowed"
+                       : "hover:bg-blue-700"
                    }
                 `}
               >
@@ -184,11 +190,16 @@ export default function MeusPedidos() {
                   <div className="p-5 space-y-4">
                     {/* Título e Status */}
                     <div className="flex justify-between items-start">
-                      <h4 className="text-lg font-bold text-gray-800 truncate pr-2" title={pedido.titulo}>
+                      <h4
+                        className="text-lg font-bold text-gray-800 truncate pr-2"
+                        title={pedido.titulo}
+                      >
                         {pedido.titulo}
                       </h4>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusClasses(pedido.status || "Pendente")}`}
+                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusClasses(
+                          pedido.status || "Pendente"
+                        )}`}
                       >
                         {pedido.status || "Pendente"}
                       </span>
@@ -198,19 +209,28 @@ export default function MeusPedidos() {
                       {/* Origem */}
                       <div className="flex items-center">
                         <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                        <span className="font-medium text-gray-700">Origem:</span> {pedido.origem_endereco}
+                        <span className="font-medium text-gray-700">
+                          Origem:
+                        </span>{" "}
+                        {pedido.origem_endereco}
                       </div>
 
                       {/* Destino */}
                       <div className="flex items-center">
                         <i className="fas fa-map-marked-alt text-green-500 mr-2"></i>
-                        <span className="font-medium text-gray-700">Destino:</span> {pedido.destino_endereco}
+                        <span className="font-medium text-gray-700">
+                          Destino:
+                        </span>{" "}
+                        {pedido.destino_endereco}
                       </div>
 
                       {/* Entregador */}
                       <div className="flex items-center">
                         <i className="fas fa-motorcycle text-blue-500 mr-2"></i>
-                        <span className="font-medium text-gray-700">Entregador:</span> {pedido.entregador || "Aguardando"}
+                        <span className="font-medium text-gray-700">
+                          Entregador:
+                        </span>{" "}
+                        {pedido.entregador || "Aguardando"}
                       </div>
                     </div>
                   </div>
@@ -218,7 +238,12 @@ export default function MeusPedidos() {
                   {/* Footer e Ações */}
                   <div className="p-5 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
                     <p className="text-xs text-gray-400">
-                      Criado em: {pedido.criado_em ? format(new Date(pedido.criado_em), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}
+                      Criado em:{" "}
+                      {pedido.criado_em
+                        ? format(new Date(pedido.criado_em), "dd/MM/yyyy", {
+                            locale: ptBR,
+                          })
+                        : "N/A"}
                     </p>
                     <div className="flex gap-3">
                       <Link
@@ -230,15 +255,16 @@ export default function MeusPedidos() {
                       </Link>
 
                       {/* Botão de editar */}
-                      {pedido.status !== "Em Rota" && pedido.status !== "Concluído" && (
-                        <Link
-                          to={`/solicitante/pedidos/editar/${pedido.id}`}
-                          className="text-yellow-600 hover:text-yellow-500 text-base"
-                          title="Editar Pedido"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </Link>
-                      )}
+                      {pedido.status !== "Em Rota" &&
+                        pedido.status !== "Concluído" && (
+                          <Link
+                            to={`/solicitante/pedidos/editar/${pedido.id}`}
+                            className="text-yellow-600 hover:text-yellow-500 text-base"
+                            title="Editar Pedido"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </Link>
+                        )}
 
                       {/* Botão de deletar */}
                       {pedido.status === "Pendente" && (
@@ -259,7 +285,7 @@ export default function MeusPedidos() {
             {/* BOTÃO VER MAIS (ADICIONADO NO FINAL DA LISTA DE CARDS) */}
             {!loading && pedidosFiltrados.length > 0 && hasMore && (
               <div className="pt-4">
-                <button 
+                <button
                   className="w-full py-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
                   onClick={handleVerMais}
                 >
