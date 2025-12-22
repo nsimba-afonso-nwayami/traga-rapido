@@ -8,28 +8,27 @@ import { toast } from "react-hot-toast";
 
 import { loginSchema } from "../../validations/loginSchema";
 import { loginService } from "../../services/loginService";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login, user } = useAuth();
 
   // REDIRECIONA SE JÁ ESTIVER LOGADO
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const tipoUsuario = localStorage.getItem("tipoUsuario");
-
-    if (token && tipoUsuario) {
-      if (tipoUsuario === "SOLICITANTE") {
+    if (user) {
+      if (user.tipo === "SOLICITANTE") {
         navigate("/dashboard/solicitante", { replace: true });
-      } else if (tipoUsuario === "ENTREGADOR") {
+      } else if (user.tipo === "ENTREGADOR") {
         navigate("/dashboard/entregador", { replace: true });
       }
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(loginSchema),
   });
@@ -43,47 +42,24 @@ export default function Login() {
 
       console.log("Resposta login completa:", response.data);
 
-      const {
-        access,
-        refresh,
-        id,
-        tipo,
-        username,
-        email,
-      } = response.data;
-
-      // SALVA EXATAMENTE O QUE A API RETORNA
-      localStorage.setItem("token", access);
-      localStorage.setItem("refreshToken", refresh);
-      localStorage.setItem("userId", id);
-      localStorage.setItem("tipoUsuario", tipo);
-      localStorage.setItem("username", username);
-      localStorage.setItem("email", email);
-
-      console.log("LocalStorage salvo:", {
-        token: access,
-        refreshToken: refresh,
-        userId: id,
-        tipoUsuario: tipo,
-        username,
-        email,
-      });
+      // Usa a função login do AuthContext
+      login(response.data);
 
       toast.success("Login feito com sucesso! Redirecionando...");
 
+      // Redirecionamento após login
       setTimeout(() => {
-        if (tipo === "SOLICITANTE") {
+        if (response.data.tipo === "SOLICITANTE") {
           navigate("/dashboard/solicitante", { replace: true });
-        } else if (tipo === "ENTREGADOR") {
+        } else if (response.data.tipo === "ENTREGADOR") {
           navigate("/dashboard/entregador", { replace: true });
         }
       }, 1500);
-
     } catch (error) {
       console.error("Erro no login:", error);
       toast.error(
         error.response?.data?.detail ||
-        "Não foi possível entrar. Verifique os dados."
+          "Não foi possível entrar. Verifique os dados."
       );
     }
   };
