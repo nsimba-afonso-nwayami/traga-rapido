@@ -25,10 +25,10 @@ export function AuthProvider({ children }) {
     const email = localStorage.getItem("email");
     const id = localStorage.getItem("userId");
 
-    if (storedToken && tipoUsuario) {
+    if (storedToken && id && tipoUsuario) {
       setToken(storedToken);
       setUser({
-        id: id ? Number(id) : null,  // converte o id para número
+        id: Number(id), // garante que seja número
         tipo: tipoUsuario,
         username,
         email,
