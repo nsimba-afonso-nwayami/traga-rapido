@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from "../../contexts/AuthContext";
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
@@ -30,7 +31,8 @@ export default function MeusPedidos() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const SOLICITANTE_ID = 18; // **IMPORTANTE**: Substituir pelo usuário logado real
+  const { user } = useAuth(); //
+  const SOLICITANTE_ID = user?.id;
 
   // Simula um estado para controlar se há mais a carregar (para fins de UI)
   const [hasMore, setHasMore] = useState(true); 

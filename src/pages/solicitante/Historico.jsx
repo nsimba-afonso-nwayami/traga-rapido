@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from "../../contexts/AuthContext";
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
@@ -29,7 +30,8 @@ export default function HistoricoPedidos() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const SOLICITANTE_ID = 18; // substituir pelo usuário logado
+  const { user } = useAuth(); 
+  const SOLICITANTE_ID = user?.id;
 
   useEffect(() => {
     async function carregarPedidos() {
