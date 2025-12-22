@@ -19,6 +19,9 @@ export default function ListaDePedidos() {
     async function fetchPedidos() {
       try {
         const response = await listarPedidos();
+        console.log("Pedidos brutos recebidos da API:", response);
+
+        // ✅ Use o array real de pedidos
         setPedidos(response.data);
       } catch (error) {
         console.error("Erro ao listar pedidos:", error);
@@ -28,8 +31,8 @@ export default function ListaDePedidos() {
       }
     }
 
-    if (idEntregador) fetchPedidos();
-  }, [idEntregador]);
+    fetchPedidos();
+  }, []);
 
   async function handleAceitar(pedidoId) {
     if (!idEntregador) {
@@ -59,7 +62,10 @@ export default function ListaDePedidos() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      <SidebarEntregador sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <SidebarEntregador
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
 
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
         <HeaderEntregador
@@ -69,9 +75,12 @@ export default function ListaDePedidos() {
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
-            {loading && <p className="text-center text-gray-500">Carregando pedidos...</p>}
+            {loading && (
+              <p className="text-center text-gray-500">Carregando pedidos...</p>
+            )}
 
-            {!loading && pedidosOrdenados.length > 0 &&
+            {!loading &&
+              pedidosOrdenados.length > 0 &&
               pedidosOrdenados.map((pedido) => (
                 <div
                   key={pedido.id}
@@ -81,13 +90,23 @@ export default function ListaDePedidos() {
                     {/* Informações do pedido */}
                     <div className="flex justify-between items-start border-b pb-3 mb-3">
                       <div>
-                        <h4 className="text-xl font-extrabold text-gray-900">{pedido.titulo}</h4>
-                        <p className="text-xs text-gray-500">Pedido #{pedido.id}</p>
-                        {pedido.descricao && <p className="text-sm text-gray-600 mt-1">{pedido.descricao}</p>}
+                        <h4 className="text-xl font-extrabold text-gray-900">
+                          {pedido.titulo}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          Pedido #{pedido.id}
+                        </p>
+                        {pedido.descricao && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {pedido.descricao}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600">
-                          {pedido.valor_sugerido ? `AOA ${pedido.valor_sugerido}` : "-"}
+                          {pedido.valor_sugerido
+                            ? `AOA ${pedido.valor_sugerido}`
+                            : "-"}
                         </p>
                         <p className="text-xs text-gray-400">Valor Estimado</p>
                       </div>
@@ -99,14 +118,20 @@ export default function ListaDePedidos() {
                         <i className="fas fa-location-arrow mr-3 text-blue-500"></i>
                         <div>
                           <p className="font-semibold text-gray-700">Origem:</p>
-                          <p className="text-gray-600">{pedido.origem_endereco}</p>
+                          <p className="text-gray-600">
+                            {pedido.origem_endereco}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center text-sm">
                         <i className="fas fa-map-marker-alt mr-3 text-red-500"></i>
                         <div>
-                          <p className="font-semibold text-gray-700">Destino:</p>
-                          <p className="text-gray-600">{pedido.destino_endereco}</p>
+                          <p className="font-semibold text-gray-700">
+                            Destino:
+                          </p>
+                          <p className="text-gray-600">
+                            {pedido.destino_endereco}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -116,7 +141,9 @@ export default function ListaDePedidos() {
                       {pedido.tipo_item && <p>Tipo: {pedido.tipo_item}</p>}
                       {pedido.peso_kg && <p>Peso: {pedido.peso_kg} kg</p>}
                       {pedido.tamanho && <p>Tamanho: {pedido.tamanho}</p>}
-                      {pedido.urgencia !== null && <p>Urgência: {pedido.urgencia}</p>}
+                      {pedido.urgencia !== null && (
+                        <p>Urgência: {pedido.urgencia}</p>
+                      )}
                     </div>
 
                     {/* Botão aceitar */}
@@ -125,10 +152,16 @@ export default function ListaDePedidos() {
                         disabled={aceitandoId === pedido.id}
                         onClick={() => handleAceitar(pedido.id)}
                         className={`px-6 py-2 font-bold rounded-lg shadow-md flex items-center transition
-                          ${aceitandoId === pedido.id ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+                          ${
+                            aceitandoId === pedido.id
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-blue-600 hover:bg-blue-700 text-white"
+                          }`}
                       >
                         <i className="fas fa-motorcycle mr-2"></i>
-                        {aceitandoId === pedido.id ? "Aceitando..." : "Aceitar Corrida"}
+                        {aceitandoId === pedido.id
+                          ? "Aceitando..."
+                          : "Aceitar Corrida"}
                       </button>
                     </div>
                   </div>
@@ -159,7 +192,6 @@ export default function ListaDePedidos() {
                 </button>
               </div>
             )}
-
           </div>
         </main>
       </div>
