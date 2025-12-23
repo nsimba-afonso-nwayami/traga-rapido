@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
-import { listarPedidos, aceitarPedido } from "../../services/pedidoService";
+import {
+  listarPedidosDisponiveis,
+  aceitarPedido,
+} from "../../services/pedidoService";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function ListaDePedidos() {
@@ -18,11 +21,8 @@ export default function ListaDePedidos() {
   useEffect(() => {
     async function fetchPedidos() {
       try {
-        const response = await listarPedidos();
-        console.log("Pedidos brutos recebidos da API:", response);
-
-        // ✅ Use o array real de pedidos
-        setPedidos(response.data);
+        const pedidosDisponiveis = await listarPedidosDisponiveis();
+        setPedidos(pedidosDisponiveis);
       } catch (error) {
         console.error("Erro ao listar pedidos:", error);
         toast.error("Erro ao carregar pedidos.");
