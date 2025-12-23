@@ -8,7 +8,11 @@ import { usuarioSenhaUpdateSchema } from "../../validations/usuarioSenhaUpdateSc
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
-import { getUsuario, updateUsuario } from "../../services/usuarioService";
+import {
+  getUsuario,
+  updateUsuario,
+  updateSenhaUsuario,
+} from "../../services/usuarioService";
 
 export default function Configuracoes() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -88,14 +92,26 @@ export default function Configuracoes() {
   const usernameInicial = user?.username?.[0] || "U";
 
   const onSubmitSenha = async (data) => {
+    if (!user?.userId && !user?.id) {
+      toast.error("Usuário não identificado.");
+      return;
+    }
+
     try {
-      // aqui futuramente entra a chamada da API
-      console.log("Dados da senha:", data);
+      await updateSenhaUsuario(user.userId || user.id, {
+        nova_senha: data.nova_senha,
+      });
 
       toast.success("Senha alterada com sucesso!");
       resetSenha();
     } catch (err) {
-      toast.error("Erro ao alterar senha.");
+      console.error("Erro ao alterar senha:", err);
+
+      if (err.response?.data?.detail) {
+        toast.error(err.response.data.detail);
+      } else {
+        toast.error("Erro ao alterar senha.");
+      }
     }
   };
 
