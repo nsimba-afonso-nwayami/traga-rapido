@@ -22,3 +22,16 @@ export async function updateUsuario(userId, dados) {
     throw error;
   }
 }
+
+// Alterar senha
+export async function updateSenhaUsuario(userId, dados) {
+  try {
+    const response = await api.patch(`/usuarios/${userId}/`, {
+      password: dados.nova_senha,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao alterar senha:", error);
+    throw error;
+  }
+}
