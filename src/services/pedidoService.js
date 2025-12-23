@@ -14,6 +14,20 @@ export async function listarPedidosPorSolicitante(idSolicitante) {
   return response.data.filter(pedido => pedido.solicitante === idSolicitante);
 }
 
+// Lista apenas pedidos disponíveis para entregador
+export async function listarPedidosDisponiveis() {
+  const response = await api.get("/pedidos/");
+
+  console.log("PEDIDOS DA API:", response.data);
+
+  return response.data.filter(
+    (pedido) =>
+      pedido.status === "AGUARDANDO_PROPOSTAS" &&
+      (pedido.entregador === null || pedido.entregador === undefined)
+  );
+}
+
+
 // Elimina pedido
 export async function eliminarPedido(id) {
   return api.delete(`/pedidos/${id}/`);
