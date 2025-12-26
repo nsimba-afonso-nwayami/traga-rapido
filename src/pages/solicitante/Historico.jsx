@@ -188,7 +188,7 @@ export default function HistoricoPedidos() {
                       </p>
                       <p className="flex items-center font-bold text-gray-800">
                         <i className="fas fa-coins w-5 text-yellow-500"></i>{" "}
-                        {pedido.valor || "AOA 0.00"}
+                        {pedido.valor_sugerido || "AOA 0.00"}
                       </p>
                     </div>
 
