@@ -36,7 +36,7 @@ export default function Login() {
   const onSubmit = async (data) => {
     try {
       const response = await loginService({
-        username: data.username,
+        email: data.email,
         password: data.password,
       });
 
@@ -86,18 +86,18 @@ export default function Login() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Usuário */}
             <div>
-              <label className="text-gray-800 text-sm">Usuário</label>
+              <label className="text-gray-800 text-sm">E-mail</label>
               <input
-                type="text"
+                type="email"
                 className={`w-full mt-1 p-3 rounded-lg bg-gray-100 outline-none ${
-                  errors.username ? "border border-red-500" : ""
+                  errors.email ? "border border-red-500" : ""
                 }`}
-                placeholder="Digite seu usuário"
-                {...register("username")}
+                placeholder="Digite seu e-mail"
+                {...register("email")}
               />
-              {errors.username && (
+              {errors.email && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.username.message}
+                  {errors.email.message}
                 </p>
               )}
             </div>
