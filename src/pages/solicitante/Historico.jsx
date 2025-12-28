@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -7,8 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 import {
-  listarPedidosPorSolicitante,
-  eliminarPedido,
+  listarPedidosPorSolicitante
 } from "../../services/pedidoService";
 
 // Função utilitária para formatar o status com cor
@@ -193,20 +193,12 @@ export default function HistoricoPedidos() {
                     </div>
 
                     <div className="flex gap-2 pt-4 border-t border-gray-100">
-                      <button className="flex-1 py-2 bg-gray-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors">
+                      <Link to={`/dashboard/solicitante/detalhes-pedido/${pedido.id}`} className="flex-1 py-2 bg-gray-50 text-blue-700 rounded-lg text-center text-xs font-bold hover:bg-blue-50 transition-colors">
                         <i className="fas fa-eye mr-1"></i> Detalhes
-                      </button>
+                      </Link>
                       {pedido.status === "Concluído" && (
                         <button className="flex-1 py-2 bg-gray-50 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors">
                           <i className="fas fa-receipt mr-1"></i> Recibo
-                        </button>
-                      )}
-                      {pedido.status === "Pendente" && (
-                        <button
-                          className="flex-1 py-2 bg-red-50 text-red-700 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"
-                          onClick={() => handleDelete(pedido.id)}
-                        >
-                          <i className="fas fa-trash mr-1"></i> Eliminar
                         </button>
                       )}
                     </div>
