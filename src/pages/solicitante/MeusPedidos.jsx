@@ -9,7 +9,6 @@ import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante"
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 import {
   listarPedidosPorSolicitante,
-  eliminarPedido,
 } from "../../services/pedidoService";
 
 // Função utilitária para formatar o status com cor
@@ -61,19 +60,6 @@ export default function MeusPedidos() {
 
     carregarPedidos();
   }, [SOLICITANTE_ID]);
-
-  async function handleDelete(id) {
-    if (!window.confirm("Tem certeza que deseja eliminar este pedido?")) return;
-
-    try {
-      await eliminarPedido(id);
-      setPedidos((prev) => prev.filter((pedido) => pedido.id !== id));
-      toast.success("Pedido eliminado com sucesso!");
-    } catch (error) {
-      console.error("Erro ao eliminar pedido:", error);
-      toast.error("Não foi possível eliminar o pedido");
-    }
-  }
 
   // Função fictícia para simular o clique do "Ver Mais"
   function handleVerMais() {
@@ -253,29 +239,6 @@ export default function MeusPedidos() {
                       >
                         <i className="fas fa-eye"></i>
                       </Link>
-
-                      {/* Botão de editar */}
-                      {pedido.status !== "Em Rota" &&
-                        pedido.status !== "Concluído" && (
-                          <Link
-                            to={`/solicitante/pedidos/editar/${pedido.id}`}
-                            className="text-yellow-600 hover:text-yellow-500 text-base"
-                            title="Editar Pedido"
-                          >
-                            <i className="fas fa-edit"></i>
-                          </Link>
-                        )}
-
-                      {/* Botão de deletar */}
-                      {pedido.status === "Pendente" && (
-                        <button
-                          onClick={() => handleDelete(pedido.id)}
-                          className="text-red-500 hover:text-red-400 text-base"
-                          title="Eliminar Pedido"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
