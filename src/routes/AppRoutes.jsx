@@ -59,7 +59,7 @@ export default function AppRoutes() {
           <Route path="pedidos" element={<MeusPedidos />} />
           <Route path="novo-pedido" element={<CriarNovoPedido />} />
           <Route path="editar-pedido" element={<EditarPedido />} />
-          <Route path="detalhes-pedido" element={<DetalhesDoPedido />} />
+          <Route path="detalhes-pedido/:id" element={<DetalhesDoPedido />} />
           <Route path="historico" element={<HistoricoPedidos />} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="notificacoes" element={<NotificacoesSolicitante />} />
