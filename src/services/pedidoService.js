@@ -26,9 +26,13 @@ export async function listarPedidosDisponiveis() {
   );
 }
 
-// Elimina pedido
-export async function eliminarPedido(id) {
-  return api.delete(`/pedidos/${id}/`);
+export async function obterPedidoPorId(id) {
+  const response = await api.get(`/pedidos/${id}/`);
+  return response.data;
+}
+
+export async function cancelarPedido(pedidoId) {
+  return api.post(`/pedidos/${pedidoId}/cancelar/`);
 }
 
 // Aceitar um pedido (atribuir ao entregador)
