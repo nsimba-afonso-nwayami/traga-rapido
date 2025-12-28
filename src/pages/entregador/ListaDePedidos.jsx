@@ -35,17 +35,14 @@ export default function ListaDePedidos() {
   }, []);
 
   async function handleAceitar(pedidoId) {
-    if (!idEntregador) {
-      toast.error("ID do entregador não definido.");
-      return;
-    }
-
     const toastId = toast.loading("Aceitando pedido...");
     setAceitandoId(pedidoId);
 
     try {
-      await aceitarPedido(pedidoId, idEntregador);
+      await aceitarPedido(pedidoId);
+
       setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
+
       toast.success("Pedido aceito com sucesso!", { id: toastId });
     } catch (error) {
       console.error("Erro ao aceitar pedido:", error);

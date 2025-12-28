@@ -16,17 +16,15 @@ export async function listarPedidosPorSolicitante(idSolicitante) {
 
 // Lista apenas pedidos disponíveis para entregador
 export async function listarPedidosDisponiveis() {
-  const response = await api.get("/pedidos/");
-
+  const response = await listarPedidos();
   console.log("PEDIDOS DA API:", response.data);
 
   return response.data.filter(
-    (pedido) =>
+    pedido =>
       pedido.status === "AGUARDANDO_PROPOSTAS" &&
-      (pedido.entregador === null || pedido.entregador === undefined)
+      pedido.entregador === null
   );
 }
-
 
 // Elimina pedido
 export async function eliminarPedido(id) {
@@ -34,9 +32,6 @@ export async function eliminarPedido(id) {
 }
 
 // Aceitar um pedido (atribuir ao entregador)
-export function aceitarPedido(pedidoId, entregadorId) {
-  return api.put(`/pedidos/${pedidoId}/`, {
-    entregador: entregadorId,
-    status: "ACEITO",
-  });
+export async function aceitarPedido(pedidoId) {
+  return api.post(`/pedidos/${pedidoId}/aceitar/`);
 }
