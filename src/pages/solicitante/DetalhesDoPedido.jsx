@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css"; // Importa o CSS do Leaflet para os estilos do mapa
-import L from "leaflet"; // Necessário para criar ícones customizados
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { obterPedidoPorId, cancelarPedido } from "../../services/pedidoService";
 
-// Define um ícone customizado para o marcador (CORRIGE o ícone padrão quebrado do Leaflet)
 const customIcon = new L.Icon({
   iconUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -17,11 +18,39 @@ const customIcon = new L.Icon({
 });
 
 export default function DetalhesDoPedido() {
-  // ADIÇÃO DO STATE para controle do menu lateral
+  const { id } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pedido, setPedido] = useState(null);
 
-  // Componente de Bloco de Detalhes para Reutilização
-  // Mantido como função pura para estruturar o layout
+  useEffect(() => {
+    async function carregarPedido() {
+      try {
+        const data = await obterPedidoPorId(id);
+        setPedido(data);
+      } catch {
+        toast.error("Erro ao carregar pedido");
+      }
+    }
+    carregarPedido();
+  }, [id]);
+
+  const handleCancelarPedido = async () => {
+    if (!window.confirm("Tem certeza que deseja cancelar este pedido?")) {
+      return;
+    }
+
+    try {
+      await cancelarPedido(pedido.id);
+      toast.success("Pedido cancelado com sucesso");
+
+      // Atualiza a página toda com o novo estado
+      const data = await obterPedidoPorId(pedido.id);
+      setPedido(data);
+    } catch (error) {
+      toast.error("Não foi possível cancelar o pedido");
+    }
+  };
+
   const DetalheItem = ({ label, value, icon }) => (
     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
       <i className={`fas fa-${icon} text-blue-600 text-lg shrink-0`}></i>
@@ -29,205 +58,153 @@ export default function DetalhesDoPedido() {
         <p className="text-xs font-medium text-gray-500">{label}</p>
         <p className="text-sm font-semibold text-gray-800 wrap-break-word">
           {value}
-        </p>{" "}
-        {/* Alterado para break-words para compatibilidade Tailwind moderna */}
+        </p>
       </div>
     </div>
   );
 
+  if (!pedido) {
+    return <p className="text-center mt-10">Carregando...</p>;
+  }
+
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <SidebarSolicitante 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
+      <SidebarSolicitante
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
       />
 
-      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        {/* Header */}
         <HeaderSolicitante
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        {/* MAIN AREA - DETALHES DO PEDIDO */}
         <main className="flex-1 overflow-auto p-4 sm:p-6">
           <div className="max-w-6xl mx-auto space-y-6">
-            {/* 1. HEADER DO PEDIDO E AÇÕES */}
+            {/* HEADER */}
             <div className="bg-white p-6 rounded-xl shadow border border-gray-300 flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">
-                  Documentos Urgentes (Pedido #1007)
+                  {pedido.titulo} (Pedido #{pedido.id})
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
-                  Criado em: 20/Nov/2025 às 10:30
+                  Criado em: {new Date(pedido.criado_em).toLocaleString()}
                 </p>
               </div>
+
               <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
                 <span className="px-3 py-1 text-sm font-bold rounded-full bg-blue-500/40 text-blue-800 border border-blue-500">
-                  Status: Em Rota
+                  Status: {pedido.status}
                 </span>
-                <button className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg text-sm hover:bg-red-700 transition">
-                  <i className="fas fa-ban mr-2"></i> Cancelar Pedido
-                </button>
-                <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg text-sm hover:bg-blue-700 transition">
-                  <i className="fas fa-receipt mr-2"></i> Ver Fatura
-                </button>
               </div>
+
+              <button
+                onClick={handleCancelarPedido}
+                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg text-sm hover:bg-red-700 transition"
+              >
+                <i className="fas fa-ban mr-2"></i> Cancelar Pedido
+              </button>
             </div>
 
-            {/* 2. INFORMAÇÕES GERAIS E RASTREAMENTO */}
+            {/* CONTEÚDO */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* BLOCO ESQUERDO: INFORMAÇÕES GERAIS */}
+              {/* DADOS */}
               <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow border border-gray-300 space-y-4">
                 <h3 className="text-lg font-bold text-gray-700 mb-4 pb-2 border-b">
-                  <i className="fas fa-info-circle mr-2 text-blue-600"></i>{" "}
+                  <i className="fas fa-info-circle mr-2 text-blue-600"></i>
                   Dados do Item
                 </h3>
+
                 <div className="space-y-3">
                   <DetalheItem
                     label="Peso Estimado"
-                    value="0.5 kg"
+                    value={`${pedido.peso_kg} kg`}
                     icon="weight-hanging"
                   />
                   <DetalheItem
                     label="Entregador Alocado"
-                    value="Pedro Silva"
+                    value={
+                      pedido.entregador
+                        ? pedido.entregador.nome
+                        : "Aguardando propostas"
+                    }
                     icon="user-circle"
                   />
                   <DetalheItem
-                    label="Valor Final (Cotação)"
-                    value="R$ 45.00"
+                    label="Valor"
+                    value={`Kz ${pedido.valor_final ?? pedido.valor_sugerido}`}
                     icon="dollar-sign"
                   />
                 </div>
 
                 <h3 className="text-lg font-bold text-gray-700 mt-6 mb-4 pb-2 border-b">
-                  <i className="fas fa-file-alt mr-2 text-blue-600"></i>{" "}
+                  <i className="fas fa-file-alt mr-2 text-blue-600"></i>
                   Descrição
                 </h3>
+
                 <p className="text-sm text-gray-600 italic bg-gray-50 p-3 rounded-lg">
-                  Documentos importantes. Entregar diretamente ao Sr. Carlos na
-                  recepção. O pacote é frágil, manusear com cuidado.
+                  {pedido.descricao}
                 </p>
               </div>
 
-              {/* BLOCO CENTRAL E DIREITO: MAPA, RASTREAMENTO E ENDEREÇOS */}
+              {/* MAPA E ENDEREÇOS */}
               <div className="lg:col-span-2 space-y-6">
-                {/* 🗺️ BLOCO DO MAPA COM LEAFLET (OpenStreetMap) */}
+                {/* MAPA */}
                 <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
                   <h3 className="text-xl font-bold text-blue-700 mb-4 flex items-center">
-                    <i className="fas fa-location-crosshairs mr-3"></i>{" "}
-                    Acompanhamento Leaflet (Luanda)
+                    <i className="fas fa-location-crosshairs mr-3"></i>
+                    Acompanhamento Leaflet
                   </h3>
 
-                  {/* MapContainer do Leaflet */}
                   <div className="w-full h-80 rounded-lg overflow-hidden border border-gray-300 z-0">
                     <MapContainer
-                      // Coordenadas de Luanda (Rua 13 de Janeiro - Exemplo)
-                      center={[-8.8188, 13.2384]}
+                      center={
+                        pedido.origem_latitude && pedido.origem_longitude
+                          ? [pedido.origem_latitude, pedido.origem_longitude]
+                          : [-8.8188, 13.2384]
+                      }
                       zoom={13}
                       scrollWheelZoom={false}
                       className="w-full h-full"
                     >
-                      {/* Camada do OpenStreetMap */}
                       <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        attribution="&copy; OpenStreetMap contributors"
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
 
-                      {/* Marcador do Entregador (posicionamento estático para exemplo) */}
-                      <Marker position={[-8.8188, 13.2384]} icon={customIcon}>
-                        <Popup>
-                          Entregador: Pedro Silva
-                          <br />
-                          Em: Rua 13 de Janeiro.
-                        </Popup>
-                      </Marker>
+                      {pedido.origem_latitude && pedido.origem_longitude && (
+                        <Marker
+                          position={[
+                            pedido.origem_latitude,
+                            pedido.origem_longitude,
+                          ]}
+                          icon={customIcon}
+                        >
+                          <Popup>Origem: {pedido.origem_endereco}</Popup>
+                        </Marker>
+                      )}
                     </MapContainer>
                   </div>
                 </div>
 
-                {/* RASTREAMENTO (Timeline/Histórico) */}
-                <div className="bg-white p-6 rounded-xl shadow border border-gray-300">
-                  <h3 className="text-xl font-bold text-blue-700 mb-6 flex items-center">
-                    <i className="fas fa-map-marked-alt mr-3"></i> Rastreamento
-                    e Linha do Tempo
-                  </h3>
-
-                  {/* Timeline Placeholder */}
-                  <div className="space-y-4 border-l-2 border-gray-200 pl-4">
-                    {/* Evento Ativo/Atual */}
-                    <div className="relative">
-                      <div className="absolute -left-[1.35rem] top-0 w-6 h-6 bg-blue-600 rounded-full border-4 border-white shadow-md flex items-center justify-center">
-                        <i className="fas fa-truck text-white text-xs"></i>
-                      </div>
-                      <p className="text-sm font-bold text-blue-700">
-                        Entregador a caminho do Destino
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        20/Nov/2025 - 15:45 | Status: Em Rota
-                      </p>
-                    </div>
-
-                    {/* Evento Passado */}
-                    <div className="relative mt-6">
-                      <div className="absolute -left-[1.35rem] top-0 w-6 h-6 bg-green-600 rounded-full border-4 border-white shadow-md flex items-center justify-center">
-                        <i className="fas fa-check text-white text-xs"></i>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-700">
-                        Item Coletado pelo Entregador
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        20/Nov/2025 - 14:10 | Origem: São Paulo/SP
-                      </p>
-                    </div>
-
-                    {/* Evento Passado */}
-                    <div className="relative mt-6">
-                      <div className="absolute -left-[1.35rem] top-0 w-6 h-6 bg-gray-400 rounded-full border-4 border-white shadow-md flex items-center justify-center">
-                        <i className="fas fa-clipboard-list text-white text-xs"></i>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-700">
-                        Pedido Confirmado e Aguardando Coleta
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        20/Nov/2025 - 11:00
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ENDEREÇOS DE ORIGEM E DESTINO */}
+                {/* ENDEREÇOS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* ORIGEM */}
                   <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
                     <h4 className="font-bold text-md text-green-700 flex items-center mb-2">
                       <i className="fas fa-location-arrow mr-2"></i> Origem
                     </h4>
                     <p className="text-sm text-gray-700">
-                      Av. Paulista, 1000 - Bela Vista
-                      <br />
-                      São Paulo/SP - CEP: 01310-100
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Ponto de Contato: Solicitante (Você)
+                      {pedido.origem_endereco}
                     </p>
                   </div>
 
-                  {/* DESTINO */}
                   <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
                     <h4 className="font-bold text-md text-red-700 flex items-center mb-2">
                       <i className="fas fa-flag-checkered mr-2"></i> Destino
                     </h4>
                     <p className="text-sm text-gray-700">
-                      Rua Primeiro de Março, 20
-                      <br />
-                      Centro, Rio de Janeiro/RJ - CEP: 20010-000
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Receptor: Carlos Pereira
+                      {pedido.destino_endereco}
                     </p>
                   </div>
                 </div>
