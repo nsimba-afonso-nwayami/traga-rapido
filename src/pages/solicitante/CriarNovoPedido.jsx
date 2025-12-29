@@ -238,7 +238,7 @@ export default function CriarNovoPedido() {
                       rows="2"
                       {...register("origem")}
                       placeholder="Endereço completo de retirada..."
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                      className={`w-full resize-none p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
                         errors.origem
                           ? "border-red-500 bg-red-50"
                           : "border-gray-300"
@@ -256,7 +256,7 @@ export default function CriarNovoPedido() {
                       rows="2"
                       {...register("destino")}
                       placeholder="Endereço completo de entrega..."
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                      className={`w-full resize-none p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
                         errors.destino
                           ? "border-red-500 bg-red-50"
                           : "border-gray-300"
@@ -270,14 +270,14 @@ export default function CriarNovoPedido() {
                   <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    className="px-6 py-3 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-6 py-3 cursor-pointer bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`px-10 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg shadow-blue-200 flex items-center justify-center transition-all ${
+                    className={`px-10 py-3 cursor-pointer bg-blue-600 text-white font-bold rounded-lg shadow-lg shadow-blue-200 flex items-center justify-center transition-all ${
                       loading
                         ? "opacity-70 cursor-not-allowed"
                         : "hover:bg-blue-700 active:scale-95"
