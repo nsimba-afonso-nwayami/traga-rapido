@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import { pedidoSchema } from "../../validations/pedidoSchema";
 import { criarPedido } from "../../services/pedidoService";
+import { criarNotificacao } from "../../services/notificacaoService";
 import { geocodeAddress } from "../../services/geocodeService";
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
@@ -55,6 +56,12 @@ export default function CriarNovoPedido() {
 
       const response = await criarPedido(payload);
       console.log("Pedido criado:", response.data);
+
+      await criarNotificacao({
+        titulo: "Novo pedido disponível 🚚",
+        mensagem: `Novo pedido: ${data.titulo}`,
+        usuario: null,
+      });
 
       toast.success("Pedido criado com sucesso!", { duration: 3000 });
       reset();
