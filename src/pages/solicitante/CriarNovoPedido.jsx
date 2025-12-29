@@ -50,6 +50,7 @@ export default function CriarNovoPedido() {
           ? Number(data.valor_sugerido)
           : null,
         solicitante: user.id, // trocar pelo ID real do usuário logado
+        entregador: 3
       };
 
       console.log("Payload do pedido:", payload);
