@@ -52,9 +52,8 @@ export default function ConfiguracoesEntregador() {
     try {
       if (activeTab === "pessoal") {
         await updateUsuario(user.userId || user.id, {
-          username: formData.nome,
-          email: formData.email,
-          telefone: formData.telefone,
+          email: formData.email || "",
+          telefone: formData.telefone || ""
         });
         toast.success("Dados pessoais atualizados com sucesso!");
       } else {
@@ -133,11 +132,11 @@ export default function ConfiguracoesEntregador() {
               {/* Pessoal */}
               {activeTab === 'pessoal' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
+                  {/*<div className="space-y-1">
                     <label htmlFor="nome" className="block text-sm font-medium text-gray-700">Nome Completo</label>
                     <input type="text" id="nome" {...register("nome")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
                     {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
-                  </div>
+                  </div>*/}
                   <div className="space-y-1">
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                     <input type="email" id="email" {...register("email")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
