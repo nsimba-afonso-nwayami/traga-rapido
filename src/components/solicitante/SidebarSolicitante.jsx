@@ -46,14 +46,6 @@ export default function SidebarSolicitante({ sidebarOpen, setSidebarOpen }) {
           </Link>
 
           <Link
-            to="/dashboard/solicitante/novo-pedido"
-            className="block p-3 rounded-lg hover:bg-blue-500/40"
-          >
-            <i className="fas fa-plus-circle mr-3 text-blue-500"></i>
-            Criar Novo Pedido
-          </Link>
-
-          <Link
             to="/dashboard/solicitante/historico"
             className="block p-3 rounded-lg hover:bg-blue-500/40"
           >
