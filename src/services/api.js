@@ -45,7 +45,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 🔴 token expirado
+    // token expirado
     if (
       error.response?.status === 401 &&
       error.response?.data?.code === "token_not_valid" &&
@@ -78,7 +78,7 @@ api.interceptors.response.use(
 
         const newAccessToken = response.data.access;
 
-        // 🔁 atualiza o token
+        // atualiza o token
         localStorage.setItem("token", newAccessToken);
 
         api.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
