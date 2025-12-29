@@ -5,7 +5,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
 
-// IMPORTAÇÕES DO MAPA (Adicionado Polyline)
+// IMPORTAÇÕES DO MAPA (Adicionado Polyline para traçar a rota)
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -30,12 +30,11 @@ import { geocodeAddress } from "../../services/geocodeService";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 
-// Auxiliar para mover a visão do mapa e ajustar o enquadramento da rota
+// Auxiliar para mover a visão do mapa e enquadrar a rota
 function RecenterMap({ coords, route }) {
   const map = useMap();
   useEffect(() => {
     if (route && route.length > 0) {
-      // Ajusta o zoom para caber a rota inteira na tela
       const bounds = L.latLngBounds(route);
       map.fitBounds(bounds, { padding: [50, 50] });
     } else if (coords) {
@@ -84,7 +83,6 @@ export default function CriarNovoPedido() {
       );
       const data = await resp.json();
       if (data.routes && data.routes.length > 0) {
-        // O OSRM retorna [longitude, latitude], o Leaflet usa [latitude, longitude]
         const pontos = data.routes[0].geometry.coordinates.map(p => [p[1], p[0]]);
         setRotaCaminho(pontos);
       }
@@ -93,7 +91,6 @@ export default function CriarNovoPedido() {
     }
   };
 
-  // Efeito para recalcular a rota sempre que as coordenadas mudarem
   useEffect(() => {
     if (mapCenter && destinoCoords.lat) {
       calcularRota(mapCenter[0], mapCenter[1], destinoCoords.lat, destinoCoords.lng);
@@ -102,14 +99,12 @@ export default function CriarNovoPedido() {
     }
   }, [mapCenter, destinoCoords]);
 
-  // Função para limpar o endereço e pegar apenas as primeiras partes
   const formatarEnderecoCurto = (displayName) => {
     if (!displayName) return "";
     const partes = displayName.split(",");
     return partes.slice(0, 3).join(",").trim();
   };
 
-  // Lógica de Autocomplete (Nominatim)
   const buscarEnderecos = async (query, setSugestoes) => {
     if (query?.length > 3) {
       try {
@@ -193,7 +188,18 @@ export default function CriarNovoPedido() {
         solicitante: user.id,
         entregador: 3,
       };
-      await criarPedido(payload);
+      
+      const pedidoCriado = await criarPedido(payload);
+      
+      // REINSERIDO: Criar notificação após sucesso do pedido
+      await criarNotificacao({
+        usuario: user.id,
+        titulo: "Pedido Criado",
+        mensagem: `Seu pedido "${data.titulo}" foi criado com sucesso!`,
+        tipo: "SUCESSO"
+      });
+
+      console.log("PEDIDO CRIADO: ", pedidoCriado);
       toast.success("Pedido criado com sucesso!");
       reset();
       navigate("/dashboard/solicitante/pedidos");
@@ -262,7 +268,6 @@ export default function CriarNovoPedido() {
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* ORIGEM */}
                     <div className="space-y-1 relative">
                       <div className="flex justify-between items-center mb-1">
                         <label className="text-sm font-bold text-blue-700 flex items-center"><i className="fas fa-map-marker-alt mr-2 text-red-500"></i> Local de Origem *</label>
@@ -279,7 +284,6 @@ export default function CriarNovoPedido() {
                       )}
                     </div>
 
-                    {/* DESTINO */}
                     <div className="space-y-1 relative">
                       <label className="text-sm font-bold text-blue-700 flex items-center pt-[5px] md:pt-0 mb-1"><i className="fas fa-flag-checkered mr-2 text-green-500"></i> Local de Destino *</label>
                       <textarea rows="2" {...register("destino")} placeholder="Endereço de entrega..." className={`w-full resize-none p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${errors.destino ? "border-red-500 bg-red-50" : "border-gray-300"}`} />
