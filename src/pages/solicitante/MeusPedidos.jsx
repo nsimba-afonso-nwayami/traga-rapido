@@ -7,9 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
-import {
-  listarPedidosPorSolicitante,
-} from "../../services/pedidoService";
+import { listarPedidosPorSolicitante } from "../../services/pedidoService";
 
 // Função utilitária para formatar o status com cor
 const getStatusClasses = (status) => {
@@ -92,26 +90,29 @@ export default function MeusPedidos() {
     .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
       <SidebarSolicitante
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
         <HeaderSolicitante
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-8 sm:space-y-10">
+        {/* ÁREA DE CONTEÚDO COM ROLAGEM INDEPENDENTE */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gray-100">
+          {/* ESPAÇADOR PARA O HEADER FIXO */}
+          <div className="h-20 w-full shrink-0"></div>
+
           {/* Barra de pesquisa e filtros */}
           <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow-lg">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">
               Filtrar Pedidos
             </h3>
             <div className="flex flex-col md:flex-row gap-4 items-stretch">
-              {/* Campo de Busca */}
               <div className="relative w-full md:w-1/3 min-w-[200px] shrink-0">
                 <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                 <input
@@ -123,7 +124,6 @@ export default function MeusPedidos() {
                 />
               </div>
 
-              {/* Filtro de Status */}
               <select
                 className="w-full md:w-auto p-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-700"
                 value={statusFilter}
@@ -136,15 +136,14 @@ export default function MeusPedidos() {
                 <option value="Cancelado">Cancelado</option>
               </select>
 
-              {/* Botão de Novo Pedido */}
               <Link
                 to="/dashboard/solicitante/novo-pedido"
                 className={`w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg transition duration-150 text-sm flex items-center justify-center 
-                   ${
-                     loading
-                       ? "opacity-70 cursor-not-allowed"
-                       : "hover:bg-blue-700"
-                   }
+                  ${
+                    loading
+                      ? "opacity-70 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                  }
                 `}
               >
                 <i className="fas fa-plus-circle mr-2"></i>
@@ -174,7 +173,6 @@ export default function MeusPedidos() {
                   className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col justify-between"
                 >
                   <div className="p-5 space-y-4">
-                    {/* Título e Status */}
                     <div className="flex justify-between items-start">
                       <h4
                         className="text-lg font-bold text-gray-800 truncate pr-2"
@@ -192,28 +190,23 @@ export default function MeusPedidos() {
                     </div>
 
                     <div className="text-sm text-gray-500 space-y-1 border-t pt-3">
-                      {/* Origem */}
                       <div className="flex items-center">
                         <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                        <span className="font-medium text-gray-700">
+                        <span className="font-medium text-gray-700 mr-1">
                           Origem:
                         </span>{" "}
                         {pedido.origem_endereco}
                       </div>
-
-                      {/* Destino */}
                       <div className="flex items-center">
                         <i className="fas fa-map-marked-alt text-green-500 mr-2"></i>
-                        <span className="font-medium text-gray-700">
+                        <span className="font-medium text-gray-700 mr-1">
                           Destino:
                         </span>{" "}
                         {pedido.destino_endereco}
                       </div>
-
-                      {/* Entregador */}
                       <div className="flex items-center">
                         <i className="fas fa-motorcycle text-blue-500 mr-2"></i>
-                        <span className="font-medium text-gray-700">
+                        <span className="font-medium text-gray-700 mr-1">
                           Entregador:
                         </span>{" "}
                         {pedido.entregador || "Aguardando"}
@@ -221,7 +214,6 @@ export default function MeusPedidos() {
                     </div>
                   </div>
 
-                  {/* Footer e Ações */}
                   <div className="p-5 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
                     <p className="text-xs text-gray-400">
                       Criado em:{" "}
@@ -231,21 +223,18 @@ export default function MeusPedidos() {
                           })
                         : "N/A"}
                     </p>
-                    <div className="flex gap-3">
-                      <Link
-                        to={`/dashboard/solicitante/detalhes-pedido/${pedido.id}`}
-                        className="text-blue-700 hover:text-blue-500 text-base"
-                        title="Ver Detalhes do Pedido"
-                      >
-                        <i className="fas fa-eye"></i>
-                      </Link>
-                    </div>
+                    <Link
+                      to={`/dashboard/solicitante/detalhes-pedido/${pedido.id}`}
+                      className="text-blue-700 hover:text-blue-500 text-base"
+                      title="Ver Detalhes do Pedido"
+                    >
+                      <i className="fas fa-eye"></i>
+                    </Link>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* BOTÃO VER MAIS (ADICIONADO NO FINAL DA LISTA DE CARDS) */}
             {!loading && pedidosFiltrados.length > 0 && hasMore && (
               <div className="pt-4">
                 <button
@@ -259,8 +248,7 @@ export default function MeusPedidos() {
             )}
           </div>
 
-          {/* Informação de Contagem */}
-          <div className="flex justify-end pt-4 border-t border-gray-300">
+          <div className="flex justify-end pt-4 border-t border-gray-300 mb-6">
             <p className="text-gray-600 text-sm">
               Mostrando {pedidosFiltrados.length} pedidos.
             </p>

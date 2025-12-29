@@ -1,53 +1,71 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 
 export default function NotFoundSolicitante() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-     {/* Sidebar */}
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
+      {/* Sidebar */}
       <SidebarSolicitante 
         sidebarOpen={sidebarOpen} 
         setSidebarOpen={setSidebarOpen} 
       />
 
-      {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
         {/* Header */}
         <HeaderSolicitante
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        {/* MAIN AREA - NOT FOUND (404) */}
-        <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-          <div className="text-center p-8 max-w-lg w-full bg-white border border-gray-300 rounded-xl shadow-xl">
-            <i className="fas fa-exclamation-circle text-red-500 text-6xl mb-4 animate-pulse"></i>
+        {/* ÁREA DE CONTEÚDO COM SCROLL E ESPAÇAMENTO */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100 flex flex-col">
+          
+          {/* ESPAÇADOR PARA O HEADER FIXO (Fundamental para não colar) */}
+          <div className="h-20 w-full shrink-0"></div>
 
-            <h1 className="text-9xl font-extrabold text-gray-800 tracking-widest mt-4 mb-2">
-              404
-            </h1>
+          {/* CONTAINER CENTRALIZADO DENTRO DA ÁREA ÚTIL */}
+          <div className="flex-1 flex items-center justify-center mb-10">
+            <div className="text-center p-8 max-w-lg w-full bg-white border border-gray-300 rounded-2xl shadow-xl flex flex-col items-center">
+              
+              {/* Elemento Visual */}
+              <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                <i className="fas fa-exclamation-triangle text-red-500 text-4xl animate-bounce"></i>
+              </div>
 
-            <h2 className="text-2xl font-bold text-gray-700 mb-4">
-              Página Não Encontrada
-            </h2>
+              <h1 className="text-8xl font-black text-gray-200 tracking-tighter mb-2">
+                404
+              </h1>
 
-            <p className="text-gray-500 mb-8">
-              Parece que você tentou acessar uma rota que não existe no painel
-              do solicitante. Verifique o endereço ou volte para o Dashboard.
-            </p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                Ops! Caminho errado.
+              </h2>
 
-            {/* Botão de Navegação para o Dashboard */}
-            <Link
-              to="/dashboard/solicitante"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition duration-150 transform hover:scale-[1.02]"
-            >
-              <i className="fas fa-tachometer-alt mr-3"></i>
-              Voltar para o Dashboard
-            </Link>
+              <p className="text-gray-500 mb-8 leading-relaxed">
+                A página que você procura não foi encontrada ou foi movida. 
+                Utilize o menu lateral ou o botão abaixo para retornar à segurança.
+              </p>
+
+              {/* Ação de Retorno */}
+              <Link
+                to="/dashboard/solicitante"
+                className="inline-flex items-center px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all transform active:scale-95"
+              >
+                <i className="fas fa-home mr-3"></i>
+                Ir para o Início
+              </Link>
+
+              <button 
+                onClick={() => navigate(-1)}
+                className="mt-4 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors"
+              >
+                Tentar voltar à página anterior
+              </button>
+            </div>
           </div>
         </main>
       </div>

@@ -68,96 +68,104 @@ export default function DetalhesDoPedido() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
       <SidebarSolicitante
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
         <HeaderSolicitante
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <div className="max-w-6xl mx-auto space-y-6">
-            {/* HEADER */}
-            <div className="bg-white p-6 rounded-xl shadow border border-gray-300 flex flex-col md:flex-row justify-between items-start md:items-center">
+        {/* ÁREA DE CONTEÚDO COM ROLAGEM INDEPENDENTE */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100">
+          {/* ESPAÇADOR PARA O HEADER FIXO */}
+          <div className="h-20 w-full shrink-0"></div>
+
+          <div className="max-w-6xl mx-auto space-y-6 pb-10">
+            {/* HEADER DO PEDIDO */}
+            <div className="bg-white p-6 rounded-xl shadow border border-gray-300 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">
-                  {pedido.titulo} (Pedido #{pedido.id})
+                  {pedido.titulo}{" "}
+                  <span className="text-blue-600 font-mono text-lg">
+                    #{pedido.id}
+                  </span>
                 </h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Criado em: {new Date(pedido.criado_em).toLocaleString()}
+                <p className="mt-1 text-sm text-gray-500 flex items-center">
+                  <i className="far fa-calendar-alt mr-2"></i>
+                  Criado em:{" "}
+                  {new Date(pedido.criado_em).toLocaleString("pt-BR")}
                 </p>
               </div>
 
-              <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
-                <span className="px-3 py-1 text-sm font-bold rounded-full bg-blue-500/40 text-blue-800 border border-blue-500">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="px-4 py-1.5 text-sm font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                   Status: {pedido.status}
                 </span>
-              </div>
 
-              <button
-                onClick={handleCancelarPedido}
-                className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg text-sm hover:bg-red-700 transition"
-              >
-                <i className="fas fa-ban mr-2"></i> Cancelar Pedido
-              </button>
+                <button
+                  onClick={handleCancelarPedido}
+                  className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg text-sm hover:bg-red-700 transition flex items-center shadow-md shadow-red-100"
+                >
+                  <i className="fas fa-ban mr-2"></i> Cancelar Pedido
+                </button>
+              </div>
             </div>
 
-            {/* CONTEÚDO */}
+            {/* CONTEÚDO EM GRIDS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* DADOS */}
-              <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow border border-gray-300 space-y-4">
-                <h3 className="text-lg font-bold text-gray-700 mb-4 pb-2 border-b">
-                  <i className="fas fa-info-circle mr-2 text-blue-600"></i>
-                  Dados do Item
-                </h3>
-
-                <div className="space-y-3">
-                  <DetalheItem
-                    label="Peso Estimado"
-                    value={`${pedido.peso_kg} kg`}
-                    icon="weight-hanging"
-                  />
-                  <DetalheItem
-                    label="Entregador Alocado"
-                    value={
-                      pedido.entregador
-                        ? pedido.entregador.nome
-                        : "Aguardando propostas"
-                    }
-                    icon="user-circle"
-                  />
-                  <DetalheItem
-                    label="Valor"
-                    value={`Kz ${pedido.valor_final ?? pedido.valor_sugerido}`}
-                    icon="dollar-sign"
-                  />
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-700 mt-6 mb-4 pb-2 border-b">
-                  <i className="fas fa-file-alt mr-2 text-blue-600"></i>
-                  Descrição
-                </h3>
-
-                <p className="text-sm text-gray-600 italic bg-gray-50 p-3 rounded-lg">
-                  {pedido.descricao}
-                </p>
-              </div>
-
-              {/* MAPA E ENDEREÇOS */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* MAPA */}
-                <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
-                  <h3 className="text-xl font-bold text-blue-700 mb-4 flex items-center">
-                    <i className="fas fa-location-crosshairs mr-3"></i>
-                    Acompanhamento Leaflet
+              {/* COLUNA DA ESQUERDA: DADOS E DESCRIÇÃO */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow border border-gray-300">
+                  <h3 className="text-lg font-bold text-gray-700 mb-4 pb-2 border-b flex items-center">
+                    <i className="fas fa-info-circle mr-2 text-blue-600"></i>
+                    Dados do Item
                   </h3>
 
-                  <div className="w-full h-80 rounded-lg overflow-hidden border border-gray-300 z-0">
+                  <div className="space-y-3">
+                    <DetalheItem
+                      label="Peso Estimado"
+                      value={`${pedido.peso_kg} kg`}
+                      icon="weight-hanging"
+                    />
+                    <DetalheItem
+                      label="Entregador Alocado"
+                      value={pedido.entregador?.nome || "Aguardando propostas"}
+                      icon="user-circle"
+                    />
+                    <DetalheItem
+                      label="Valor do Serviço"
+                      value={`Kz ${
+                        pedido.valor_final ?? pedido.valor_sugerido
+                      }`}
+                      icon="dollar-sign"
+                    />
+                  </div>
+
+                  <h3 className="text-lg font-bold text-gray-700 mt-8 mb-4 pb-2 border-b flex items-center">
+                    <i className="fas fa-file-alt mr-2 text-blue-600"></i>
+                    Descrição
+                  </h3>
+                  <p className="text-sm text-gray-600 italic bg-gray-50 p-4 rounded-lg border border-gray-100 leading-relaxed">
+                    {pedido.descricao || "Sem descrição adicional."}
+                  </p>
+                </div>
+              </div>
+
+              {/* COLUNA DA DIREITA: MAPA E ENDEREÇOS */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* MAPA LEAFLET */}
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
+                  <h3 className="text-lg font-bold text-blue-700 mb-4 flex items-center">
+                    <i className="fas fa-map-marked-alt mr-3"></i>
+                    Localização e Rota
+                  </h3>
+
+                  <div className="w-full h-80 rounded-lg overflow-hidden border border-gray-200 z-10 relative">
                     <MapContainer
                       center={
                         pedido.origem_latitude && pedido.origem_longitude
@@ -169,7 +177,7 @@ export default function DetalhesDoPedido() {
                       className="w-full h-full"
                     >
                       <TileLayer
-                        attribution="&copy; OpenStreetMap contributors"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
 
@@ -181,29 +189,34 @@ export default function DetalhesDoPedido() {
                           ]}
                           icon={customIcon}
                         >
-                          <Popup>Origem: {pedido.origem_endereco}</Popup>
+                          <Popup>
+                            <span className="font-bold">Origem:</span> <br />{" "}
+                            {pedido.origem_endereco}
+                          </Popup>
                         </Marker>
                       )}
                     </MapContainer>
                   </div>
                 </div>
 
-                {/* ENDEREÇOS */}
+                {/* ENDEREÇOS DETALHADOS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
-                    <h4 className="font-bold text-md text-green-700 flex items-center mb-2">
-                      <i className="fas fa-location-arrow mr-2"></i> Origem
+                  <div className="bg-white p-5 rounded-xl shadow border-l-4 border-l-green-500 border-gray-300">
+                    <h4 className="font-bold text-sm text-green-700 flex items-center mb-2 uppercase tracking-wider">
+                      <i className="fas fa-location-arrow mr-2"></i> Ponto de
+                      Recolha
                     </h4>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 font-medium">
                       {pedido.origem_endereco}
                     </p>
                   </div>
 
-                  <div className="bg-white p-4 rounded-xl shadow border border-gray-300">
-                    <h4 className="font-bold text-md text-red-700 flex items-center mb-2">
-                      <i className="fas fa-flag-checkered mr-2"></i> Destino
+                  <div className="bg-white p-5 rounded-xl shadow border-l-4 border-l-red-500 border-gray-300">
+                    <h4 className="font-bold text-sm text-red-700 flex items-center mb-2 uppercase tracking-wider">
+                      <i className="fas fa-flag-checkered mr-2"></i> Ponto de
+                      Entrega
                     </h4>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 font-medium">
                       {pedido.destino_endereco}
                     </p>
                   </div>

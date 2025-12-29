@@ -116,20 +116,24 @@ export default function Configuracoes() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
       <SidebarSolicitante
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
         <HeaderSolicitante
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <div className="max-w-4xl mx-auto bg-white border border-gray-300 rounded-xl shadow p-6 sm:p-8">
+        {/* ÁREA DE CONTEÚDO COM ROLAGEM INDEPENDENTE */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100">
+          {/* ESPAÇADOR PARA O HEADER FIXO */}
+          <div className="h-20 w-full shrink-0"></div>
+
+          <div className="max-w-4xl mx-auto bg-white border border-gray-300 rounded-xl shadow p-6 sm:p-8 mb-10">
             {/* ABAS DE NAVEGAÇÃO */}
             <div className="border-b border-gray-200 mb-6">
               <nav className="flex space-x-4">
@@ -217,15 +221,8 @@ export default function Configuracoes() {
                           id="email"
                           {...register("email")}
                           disabled
-                          className={`w-full p-2 border rounded-lg focus:outline-none ${
-                            errors.email ? "border-red-500" : "border-gray-300"
-                          }`}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-50 cursor-not-allowed"
                         />
-                        {errors.email && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.email.message}
-                          </p>
-                        )}
                       </div>
                     </div>
 
@@ -306,6 +303,7 @@ export default function Configuracoes() {
                         </p>
                       )}
                     </div>
+
                     <div className="space-y-1">
                       <label
                         htmlFor="nova_senha"
@@ -330,6 +328,7 @@ export default function Configuracoes() {
                         </p>
                       )}
                     </div>
+
                     <div className="space-y-1">
                       <label
                         htmlFor="confirma_senha"
@@ -364,22 +363,6 @@ export default function Configuracoes() {
                       </button>
                     </div>
                   </form>
-
-                  <hr className="my-8" />
-
-                  <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
-                    <p className="font-bold">
-                      Autenticação de Dois Fatores (2FA)
-                    </p>
-                    <p className="text-sm">
-                      Recomendado para segurança extra. Ative o 2FA para
-                      proteger sua conta.
-                    </p>
-                    <button className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-semibold">
-                      Configurar 2FA{" "}
-                      <i className="fas fa-chevron-right ml-1"></i>
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
