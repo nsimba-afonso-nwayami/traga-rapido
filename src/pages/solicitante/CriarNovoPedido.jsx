@@ -60,7 +60,7 @@ export default function CriarNovoPedido() {
       await criarNotificacao({
         titulo: "Novo pedido disponível 🚚",
         mensagem: `Novo pedido: ${data.titulo}`,
-        usuario: null,
+        usuario: 3,
       });
 
       toast.success("Pedido criado com sucesso!", { duration: 3000 });
