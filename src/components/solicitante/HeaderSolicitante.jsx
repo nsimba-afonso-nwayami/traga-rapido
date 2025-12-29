@@ -33,28 +33,28 @@ export default function HeaderSolicitante({ sidebarOpen, setSidebarOpen }) {
   const currentIcon = icons[location.pathname] || "fas fa-user";
 
   return (
-    <header className="bg-blue-700/90 border-b border-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-10">
-
+    <header className="fixed top-0 right-0 left-0 md:left-64 bg-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-1001 shadow-md">
       {/* Botão abrir menu mobile */}
       <button
-        className="md:hidden text-2xl text-white"
+        className="md:hidden text-2xl text-white mr-4"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
         <i className="fas fa-bars"></i>
       </button>
 
       {/* Título + ícone automáticos */}
-      <h2 className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center">
-        <i className={`${currentIcon} mr-2 text-blue-300`}></i>
-        {currentTitle}
-      </h2>
+      <div className="flex-1 flex items-center">
+        <h2 className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center">
+          <i className={`${currentIcon} mr-3 text-blue-300`}></i>
+          <span className="truncate">{currentTitle}</span>
+        </h2>
+      </div>
 
       <div className="flex items-center gap-4 sm:gap-6">
-
         {/* Notificações */}
         <Link
           to="/dashboard/solicitante/notificacoes"
-          className="relative text-xl sm:text-2xl text-blue-300 hover:text-blue-200 transition-all"
+          className="relative text-xl sm:text-2xl text-blue-300 hover:text-white transition-all"
         >
           <i className="fas fa-bell"></i>
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
@@ -64,11 +64,11 @@ export default function HeaderSolicitante({ sidebarOpen, setSidebarOpen }) {
 
         {/* Avatar */}
         <div className="flex items-center gap-3">
-          <span className="text-sm opacity-80 hidden sm:block text-white">
+          <span className="text-sm opacity-80 hidden lg:block text-white truncate max-w-[150px]">
             {user?.email || "Usuário"}
           </span>
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <i className="fas fa-user text-white text-base"></i>
+          <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center border border-blue-400">
+            <i className="fas fa-user text-white"></i>
           </div>
         </div>
       </div>
