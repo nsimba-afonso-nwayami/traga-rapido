@@ -1,64 +1,91 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from "react-hot-toast";
+
+import { usuarioUpdateSchema } from "../../validations/usuarioUpdateSchema";
+import { usuarioSenhaUpdateSchema } from "../../validations/usuarioSenhaUpdateSchema";
+import { getUsuario, updateUsuario, updateSenhaUsuario } from "../../services/usuarioService";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function ConfiguracoesEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Abas atualizadas: 'pessoal', 'veiculo', 'pagamento', 'seguranca'
-  const [activeTab, setActiveTab] = useState('pessoal'); 
+  const [activeTab, setActiveTab] = useState("pessoal"); 
+  const { user } = useAuth();
 
-  // Dados Estáticos de Simulação (Mantidos por brevidade)
-  const entregadorData = {
-    nome: "Luiz Miguel",
-    email: "luiz.miguel@tragarapido.com",
-    telefone: "+244 912 345 678",
-    cidade: "Luanda",
-    bi: "1234567LA045",
-  };
-  
-  const veiculoData = {
-    tipo: "Moto (Cilindrada 150cc)",
-    modelo: "Honda CG Fan",
-    placa: "LD-55-90-AA",
-    cor: "Preta",
-  };
+  // Forms
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(usuarioUpdateSchema),
+  });
 
-  const pagamentoData = {
-    banco: "Banco Angolano de Investimentos (BAI)",
-    nib: "0040.0000.1234.5678.901",
-    nomeTitular: "Luiz K. Miguel",
-  };
+  const {
+    register: registerSenha,
+    handleSubmit: handleSubmitSenha,
+    reset: resetSenha,
+    formState: { errors: errorsSenha },
+  } = useForm({
+    resolver: yupResolver(usuarioSenhaUpdateSchema),
+  });
 
-  // Função Placeholder para submissão
-  const handleSubmit = (e) => {
-      e.preventDefault();
-      console.log(`Dados da aba ${activeTab} salvos.`);
-      // Lógica de envio para o Backend
-      if (activeTab === 'seguranca') {
-          alert('Senha alterada com sucesso (simulado)!');
+  // Dados do entregador
+  useEffect(() => {
+    if (user?.userId || user?.id) {
+      getUsuario(user.userId || user.id)
+        .then((data) => {
+          setValue("nome", data.username || "");
+          setValue("email", data.email || "");
+          setValue("telefone", data.telefone || "");
+        })
+        .catch(() => toast.error("Não foi possível carregar os dados do usuário."));
+    }
+  }, [user, setValue]);
+
+  // Submissão Pessoal, Veículo ou Pagamento
+  const onSubmit = async (formData) => {
+    try {
+      if (activeTab === "pessoal") {
+        await updateUsuario(user.userId || user.id, {
+          username: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+        });
+        toast.success("Dados pessoais atualizados com sucesso!");
       } else {
-          alert(`Configurações de ${activeTab} salvas.`);
+        toast.success(`Configurações de ${activeTab} salvas (simulado).`);
       }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar alterações.");
+    }
+  };
+
+  // Submissão Senha
+  const onSubmitSenha = async (formData) => {
+    try {
+      await updateSenhaUsuario(user.userId || user.id, {
+        nova_senha: formData.nova_senha,
+      });
+      toast.success("Senha alterada com sucesso!");
+      resetSenha();
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao alterar senha.");
+    }
   };
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <SidebarEntregador
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
-      {/* MAIN CONTENT */}
+      <SidebarEntregador sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        {/* HEADER */}
-        <HeaderEntregador
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        <HeaderEntregador sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-
-        {/* MAIN AREA - CONFIGURAÇÕES */}
         <main className="flex-1 overflow-auto p-4 sm:p-6">
           <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8 space-y-6">
             
@@ -66,9 +93,7 @@ export default function ConfiguracoesEntregador() {
             <div className="flex border-b border-gray-200 mb-6 overflow-x-auto whitespace-nowrap">
               <button
                 className={`px-4 py-2 text-base font-semibold transition-colors duration-150 ${
-                  activeTab === 'pessoal' 
-                    ? 'border-b-4 border-blue-600 text-blue-600' 
-                    : 'text-gray-500 hover:text-blue-500'
+                  activeTab === 'pessoal' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-blue-500'
                 }`}
                 onClick={() => setActiveTab('pessoal')}
               >
@@ -76,9 +101,7 @@ export default function ConfiguracoesEntregador() {
               </button>
               <button
                 className={`px-4 py-2 text-base font-semibold transition-colors duration-150 ${
-                  activeTab === 'veiculo' 
-                    ? 'border-b-4 border-blue-600 text-blue-600' 
-                    : 'text-gray-500 hover:text-blue-500'
+                  activeTab === 'veiculo' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-blue-500'
                 }`}
                 onClick={() => setActiveTab('veiculo')}
               >
@@ -86,20 +109,15 @@ export default function ConfiguracoesEntregador() {
               </button>
               <button
                 className={`px-4 py-2 text-base font-semibold transition-colors duration-150 ${
-                  activeTab === 'pagamento' 
-                    ? 'border-b-4 border-blue-600 text-blue-600' 
-                    : 'text-gray-500 hover:text-blue-500'
+                  activeTab === 'pagamento' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-blue-500'
                 }`}
                 onClick={() => setActiveTab('pagamento')}
               >
                 <i className="fas fa-credit-card mr-2"></i> Pagamento
               </button>
-              {/* NOVA ABA: SEGURANÇA */}
               <button
                 className={`px-4 py-2 text-base font-semibold transition-colors duration-150 ${
-                  activeTab === 'seguranca' 
-                    ? 'border-b-4 border-blue-600 text-blue-600' 
-                    : 'text-gray-500 hover:text-blue-500'
+                  activeTab === 'seguranca' ? 'border-b-4 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-blue-500'
                 }`}
                 onClick={() => setActiveTab('seguranca')}
               >
@@ -108,98 +126,98 @@ export default function ConfiguracoesEntregador() {
             </div>
             
             {/* CONTEÚDO DAS ABAS */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              {/* ABA PESSOAL (Mantido) */}
+            <form
+              onSubmit={activeTab === 'seguranca' ? handleSubmitSenha(onSubmitSenha) : handleSubmit(onSubmit)}
+              className="space-y-6"
+            >
+              {/* Pessoal */}
               {activeTab === 'pessoal' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1">
-                        <label htmlFor="nome" className="block text-sm font-medium text-gray-700">Nome Completo</label>
-                        <input type="text" id="nome" defaultValue={entregadorData.nome} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" id="email" defaultValue={entregadorData.email} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="telefone" className="block text-sm font-medium text-gray-700">Telefone</label>
-                        <input type="text" id="telefone" defaultValue={entregadorData.telefone} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="cidade" className="block text-sm font-medium text-gray-700">Cidade de Atuação</label>
-                        <input type="text" id="cidade" defaultValue={entregadorData.cidade} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                        <label htmlFor="bi" className="block text-sm font-medium text-gray-700">Nº do B.I. / Documento de Identificação</label>
-                        <input type="text" id="bi" defaultValue={entregadorData.bi} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
+                  <div className="space-y-1">
+                    <label htmlFor="nome" className="block text-sm font-medium text-gray-700">Nome Completo</label>
+                    <input type="text" id="nome" {...register("nome")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                    {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" {...register("email")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                    {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="telefone" className="block text-sm font-medium text-gray-700">Telefone</label>
+                    <input type="text" id="telefone" {...register("telefone")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                    {errors.telefone && <p className="text-red-500 text-sm">{errors.telefone.message}</p>}
+                  </div>
                 </div>
               )}
-              
-              {/* ABA VEÍCULO (Mantido) */}
+
+              {/* Veículo */}
               {activeTab === 'veiculo' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1 md:col-span-2">
-                        <label htmlFor="tipo" className="block text-sm font-medium text-gray-700">Tipo de Veículo</label>
-                        <input type="text" id="tipo" defaultValue={veiculoData.tipo} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="modelo" className="block text-sm font-medium text-gray-700">Modelo</label>
-                        <input type="text" id="modelo" defaultValue={veiculoData.modelo} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="placa" className="block text-sm font-medium text-gray-700">Placa / Matrícula</label>
-                        <input type="text" id="placa" defaultValue={veiculoData.placa} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                        <label htmlFor="cor" className="block text-sm font-medium text-gray-700">Cor</label>
-                        <input type="text" id="cor" defaultValue={veiculoData.cor} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label htmlFor="tipo" className="block text-sm font-medium text-gray-700">Tipo de Veículo</label>
+                    <input type="text" id="tipo" {...register("tipo")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="modelo" className="block text-sm font-medium text-gray-700">Modelo</label>
+                    <input type="text" id="modelo" {...register("modelo")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="placa" className="block text-sm font-medium text-gray-700">Placa / Matrícula</label>
+                    <input type="text" id="placa" {...register("placa")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label htmlFor="cor" className="block text-sm font-medium text-gray-700">Cor</label>
+                    <input type="text" id="cor" {...register("cor")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
                 </div>
               )}
 
-              {/* ABA PAGAMENTO (Mantido) */}
+              {/* Pagamento */}
               {activeTab === 'pagamento' && (
                 <div className="space-y-4">
-                    <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 rounded-lg text-sm">
-                        <p className="font-bold">Atenção:</p>
-                        <p>O NIB/IBAN é crucial para o repasse semanal ou quinzenal dos seus ganhos.</p>
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="banco" className="block text-sm font-medium text-gray-700">Nome do Banco</label>
-                        <input type="text" id="banco" defaultValue={pagamentoData.banco} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="nib" className="block text-sm font-medium text-gray-700">NIB / IBAN</label>
-                        <input type="text" id="nib" defaultValue={pagamentoData.nib} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="titular" className="block text-sm font-medium text-gray-700">Nome do Titular da Conta</label>
-                        <input type="text" id="titular" defaultValue={pagamentoData.nomeTitular} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
+                  <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 rounded-lg text-sm">
+                    <p className="font-bold">Atenção:</p>
+                    <p>O NIB/IBAN é crucial para o repasse semanal ou quinzenal dos seus ganhos.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="banco" className="block text-sm font-medium text-gray-700">Nome do Banco</label>
+                    <input type="text" id="banco" {...register("banco")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="nib" className="block text-sm font-medium text-gray-700">NIB / IBAN</label>
+                    <input type="text" id="nib" {...register("nib")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="titular" className="block text-sm font-medium text-gray-700">Nome do Titular da Conta</label>
+                    <input type="text" id="titular" {...register("titular")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
                 </div>
               )}
 
-              {/* NOVO: ABA SEGURANÇA */}
+              {/* Segurança */}
               {activeTab === 'seguranca' && (
                 <div className="space-y-4">
-                    <h4 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Alterar Senha</h4>
-                    <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-800 rounded-lg text-sm">
-                        <p className="font-bold">Importante:</p>
-                        <p>A nova senha deve ter no mínimo 8 caracteres, incluindo letras e números.</p>
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="senha_atual" className="block text-sm font-medium text-gray-700">Senha Atual</label>
-                        <input type="password" id="senha_atual" placeholder="Digite sua senha atual" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="nova_senha" className="block text-sm font-medium text-gray-700">Nova Senha</label>
-                        <input type="password" id="nova_senha" placeholder="Digite a nova senha" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="confirmar_senha" className="block text-sm font-medium text-gray-700">Confirmar Nova Senha</label>
-                        <input type="password" id="confirmar_senha" placeholder="Confirme a nova senha" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required />
-                    </div>
+                  <h4 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Alterar Senha</h4>
+                  <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-800 rounded-lg text-sm">
+                    <p className="font-bold">Importante:</p>
+                    <p>A nova senha deve ter no mínimo 8 caracteres, incluindo letras e números.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="senha_atual" className="block text-sm font-medium text-gray-700">Senha Atual</label>
+                    <input type="password" id="senha_atual" {...registerSenha("senha_atual")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                    {errorsSenha.senha_atual && <p className="text-red-500 text-sm">{errorsSenha.senha_atual.message}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="nova_senha" className="block text-sm font-medium text-gray-700">Nova Senha</label>
+                    <input type="password" id="nova_senha" {...registerSenha("nova_senha")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                    {errorsSenha.nova_senha && <p className="text-red-500 text-sm">{errorsSenha.nova_senha.message}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="confirmar_senha" className="block text-sm font-medium text-gray-700">Confirmar Nova Senha</label>
+                    <input type="password" id="confirmar_senha" {...registerSenha("confirma_senha")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                    {errorsSenha.confirma_senha && <p className="text-red-500 text-sm">{errorsSenha.confirma_senha.message}</p>}
+                  </div>
                 </div>
               )}
 
@@ -212,6 +230,7 @@ export default function ConfiguracoesEntregador() {
                   <i className="fas fa-save mr-3 text-lg"></i> Salvar Alterações
                 </button>
               </div>
+
             </form>
           </div>
         </main>
