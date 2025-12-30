@@ -5,11 +5,11 @@ export const api = axios.create({
 });
 
 /* ===============================
-   INTERCEPTOR DE REQUEST
+   REQUEST INTERCEPTOR
 ================================ */
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token"); // ACCESS
+    const token = localStorage.getItem("token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -21,8 +21,7 @@ api.interceptors.request.use(
 );
 
 /* ===============================
-   INTERCEPTOR DE RESPONSE
-   (REFRESH TOKEN)
+   RESPONSE INTERCEPTOR (401)
 ================================ */
 
 let isRefreshing = false;
@@ -30,13 +29,8 @@ let failedQueue = [];
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+    error ? prom.reject(error) : prom.resolve(token);
   });
-
   failedQueue = [];
 };
 
@@ -45,12 +39,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // token expirado
-    if (
-      error.response?.status === 401 &&
-      error.response?.data?.code === "token_not_valid" &&
-      !originalRequest._retry
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -63,33 +52,32 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
+      const refresh = localStorage.getItem("refreshToken");
 
-      if (!refreshToken) {
+      if (!refresh) {
         logout();
         return Promise.reject(error);
       }
 
       try {
         const response = await axios.post(
-          "https://traga-rapido.fimbatec.com/api/token/refresh/",
-          { refresh: refreshToken }
+          "https://traga-rapido.fimbatec.com/api/auth/token/refresh/",
+          { refresh }
         );
 
         const newAccessToken = response.data.access;
 
-        // atualiza o token
         localStorage.setItem("token", newAccessToken);
+        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
 
-        api.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
-
+        scheduleTokenRefresh(newAccessToken);
         processQueue(null, newAccessToken);
 
         return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
+      } catch (err) {
+        processQueue(err, null);
         logout();
-        return Promise.reject(refreshError);
+        return Promise.reject(err);
       } finally {
         isRefreshing = false;
       }
@@ -100,9 +88,66 @@ api.interceptors.response.use(
 );
 
 /* ===============================
-   LOGOUT GLOBAL
+   JWT HELPERS
+================================ */
+
+function parseJwt(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+let refreshTimeout = null;
+
+function scheduleTokenRefresh(accessToken) {
+  const decoded = parseJwt(accessToken);
+  if (!decoded?.exp) return;
+
+  const expiresAt = decoded.exp * 1000;
+  const now = Date.now();
+  const refreshTime = expiresAt - now - 60 * 1000;
+
+  if (refreshTime <= 0) return;
+
+  if (refreshTimeout) clearTimeout(refreshTimeout);
+
+  refreshTimeout = setTimeout(refreshToken, refreshTime);
+}
+
+async function refreshToken() {
+  const refresh = localStorage.getItem("refreshToken");
+
+  if (!refresh) {
+    logout();
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      "https://traga-rapido.fimbatec.com/api/auth/token/refresh/",
+      { refresh }
+    );
+
+    const newAccessToken = response.data.access;
+
+    localStorage.setItem("token", newAccessToken);
+    api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+
+    scheduleTokenRefresh(newAccessToken);
+  } catch {
+    logout();
+  }
+}
+
+/* ===============================
+   LOGOUT
 ================================ */
 function logout() {
-  localStorage.clear();
-  window.location.href = "/auth/login";
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  window.location.replace("/auth/login");
 }
