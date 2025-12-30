@@ -146,7 +146,7 @@ export default function NotificacoesEntregador() {
 
                       <div className="text-left sm:text-right ml-0 sm:ml-4 w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0">
                         <p className="text-xs text-gray-400 whitespace-nowrap">
-                          {new Date(notif.created_at).toLocaleString("pt-PT")}
+                          {new Date(notif.criado_em).toLocaleString("pt-PT")}
                         </p>
 
                         {!notif.lida && (
