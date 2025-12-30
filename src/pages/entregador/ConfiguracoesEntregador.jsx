@@ -86,6 +86,10 @@ export default function ConfiguracoesEntregador() {
         <HeaderEntregador sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         <main className="flex-1 overflow-auto p-4 sm:p-6">
+          
+          {/* ESPAÇADOR PARA O HEADER FIXO */}
+          <div className="h-16 w-full md:h-20"></div>
+
           <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8 space-y-6">
             
             {/* Abas de Navegação */}
@@ -132,11 +136,6 @@ export default function ConfiguracoesEntregador() {
               {/* Pessoal */}
               {activeTab === 'pessoal' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/*<div className="space-y-1">
-                    <label htmlFor="nome" className="block text-sm font-medium text-gray-700">Nome Completo</label>
-                    <input type="text" id="nome" {...register("nome")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
-                    {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
-                  </div>*/}
                   <div className="space-y-1">
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                     <input type="email" id="email" {...register("email")} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
@@ -224,7 +223,7 @@ export default function ConfiguracoesEntregador() {
               <div className="pt-6 border-t border-gray-200 flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition duration-150 flex items-center"
+                  className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition duration-150 flex items-center justify-center"
                 >
                   <i className="fas fa-save mr-3 text-lg"></i> Salvar Alterações
                 </button>

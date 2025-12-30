@@ -35,21 +35,23 @@ export default function HeaderEntregador({
   const currentIcon = icons[location.pathname] || "fas fa-motorcycle";
 
   return (
-    <header className="bg-blue-800/90 border-b border-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-10">
+    <header className="fixed top-0 right-0 left-0 md:left-64 bg-blue-800/90 border-b border-blue-700 h-16 flex items-center justify-between px-4 sm:px-6 z-1001 shadow-md">
 
       {/* Botão Mobile */}
       <button
-        className="md:hidden text-2xl text-white"
+        className="md:hidden text-2xl text-white mr-4"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
         <i className="fas fa-bars"></i>
       </button>
 
       {/* Título e ícone dinâmicos */}
-      <h2 className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center">
-        <i className={`${currentIcon} mr-2 text-blue-400`}></i>
-        {currentTitle}
-      </h2>
+      <div className="flex-1 flex items-center">
+        <h2 className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center">
+          <i className={`${currentIcon} mr-3 text-blue-400`}></i>
+          <span className="truncate">{currentTitle}</span>
+        </h2>
+      </div>
 
       <div className="flex items-center gap-4 sm:gap-6">
 
@@ -66,10 +68,10 @@ export default function HeaderEntregador({
 
         {/* Avatar */}
         <div className="flex items-center gap-3">
-          <span className="text-sm opacity-80 hidden sm:block text-white">
+          <span className="text-sm opacity-80 hidden lg:block text-white truncate max-w-[150px]">
             {user?.email || "Entregador"}
           </span>
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center border border-blue-400">
             <i className="fas fa-user text-white text-base"></i>
           </div>
         </div>

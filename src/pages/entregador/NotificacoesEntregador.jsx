@@ -32,7 +32,9 @@ export default function NotificacoesEntregador() {
   };
 
   const limparTodas = () => {
-    if (window.confirm("Tem certeza que deseja limpar todas as notificações?")) {
+    if (
+      window.confirm("Tem certeza que deseja limpar todas as notificações?")
+    ) {
       setNotificacoes([]);
     }
   };
@@ -40,23 +42,22 @@ export default function NotificacoesEntregador() {
   const notificacoesNaoLidas = notificacoes.filter((n) => !n.lida).length;
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
       <SidebarEntregador
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
-        {/* HEADER */}
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative overflow-hidden">
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        {/* MAIN AREA - NOTIFICAÇÕES */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {/* ESPAÇADOR PARA O HEADER FIXO */}
+          <div className="h-16 w-full shrink-0 md:h-20"></div>
+
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Ações e Contagem */}
             <div className="flex justify-between items-center flex-wrap gap-3">
@@ -75,14 +76,12 @@ export default function NotificacoesEntregador() {
               </button>
             </div>
 
-            {/* Loading */}
             {loading && (
               <div className="text-center py-10 text-gray-500">
                 Carregando notificações...
               </div>
             )}
 
-            {/* Lista de Notificações */}
             {!loading && (
               <div className="space-y-3">
                 {notificacoes.map((notif) => (
@@ -97,28 +96,25 @@ export default function NotificacoesEntregador() {
                     `}
                     onClick={() => !notif.lida && marcarComoLida(notif.id)}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center">
-                        <div className="p-2 rounded-full mr-3 bg-blue-100 text-blue-700">
+                    {/* AJUSTE: flex-col no mobile para empilhar Título e Valor/Data */}
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
+                      <div className="flex items-start">
+                        <div className="p-2 rounded-full mr-3 bg-blue-100 text-blue-700 shrink-0">
                           <i className="fas fa-bell text-lg"></i>
                         </div>
 
                         <div>
                           <p
-                            className={`text-base font-bold ${
-                              notif.lida
-                                ? "text-gray-700"
-                                : "text-blue-800"
+                            className={`text-base font-bold leading-tight ${
+                              notif.lida ? "text-gray-700" : "text-blue-800"
                             }`}
                           >
                             {notif.titulo}
                           </p>
 
                           <p
-                            className={`text-sm mt-0.5 ${
-                              notif.lida
-                                ? "text-gray-500"
-                                : "text-gray-600"
+                            className={`text-sm mt-1 ${
+                              notif.lida ? "text-gray-500" : "text-gray-600"
                             }`}
                           >
                             {notif.mensagem}
@@ -126,13 +122,14 @@ export default function NotificacoesEntregador() {
                         </div>
                       </div>
 
-                      <div className="text-right ml-4">
+                      {/* AJUSTE: Alinhamento da data no mobile */}
+                      <div className="text-left sm:text-right ml-0 sm:ml-4 w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0">
                         <p className="text-xs text-gray-400 whitespace-nowrap">
                           {new Date(notif.created_at).toLocaleString("pt-PT")}
                         </p>
 
                         {!notif.lida && (
-                          <span className="text-xs font-semibold text-blue-500 mt-1 block">
+                          <span className="inline-block text-xs font-semibold text-blue-500 mt-1">
                             Novo
                           </span>
                         )}
@@ -141,7 +138,6 @@ export default function NotificacoesEntregador() {
                   </div>
                 ))}
 
-                {/* Estado vazio */}
                 {notificacoes.length === 0 && (
                   <div className="bg-white p-10 rounded-xl text-center shadow-lg mt-6">
                     <i className="fas fa-bell-slash text-6xl text-gray-300 mb-4"></i>
@@ -156,6 +152,8 @@ export default function NotificacoesEntregador() {
               </div>
             )}
           </div>
+          {/* Espaçamento extra no fim para evitar que o conteúdo encoste na borda */}
+          <div className="h-10 w-full"></div>
         </main>
       </div>
     </div>

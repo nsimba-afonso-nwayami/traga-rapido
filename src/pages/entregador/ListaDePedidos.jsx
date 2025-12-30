@@ -14,7 +14,6 @@ export default function ListaDePedidos() {
   const [loading, setLoading] = useState(true);
   const [aceitandoId, setAceitandoId] = useState(null);
 
-  // Pegando o usuário logado do AuthContext
   const { user } = useAuth();
   const idEntregador = user?.id;
 
@@ -30,7 +29,6 @@ export default function ListaDePedidos() {
         setLoading(false);
       }
     }
-
     fetchPedidos();
   }, []);
 
@@ -40,9 +38,7 @@ export default function ListaDePedidos() {
 
     try {
       await aceitarPedido(pedidoId);
-
       setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
-
       toast.success("Pedido aceito com sucesso!", { id: toastId });
     } catch (error) {
       console.error("Erro ao aceitar pedido:", error);
@@ -52,28 +48,36 @@ export default function ListaDePedidos() {
     }
   }
 
-  // Ordena os pedidos do mais recente para o mais antigo
   const pedidosOrdenados = [...pedidos].sort(
     (a, b) => new Date(b.criado_em) - new Date(a.criado_em)
   );
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gray-100 overflow-hidden">
+      {/* Sidebar */}
       <SidebarEntregador
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64 overflow-x-hidden">
+      {/* Container Principal com h-screen e overflow-hidden para travar a barra externa */}
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
+        {/* HEADER FIXO */}
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6 space-y-6">
+        {/* ÁREA DE CONTEÚDO COM ROLAGEM PRÓPRIA */}
+        <main className="flex-1 overflow-y-auto bg-gray-100 px-4 sm:px-6 pb-10">
+          {/* ESPAÇADOR MANUAL: Impede que o menu cubra os primeiros cards */}
+          <div className="h-20 w-full shrink-0"></div>
+
           <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
             {loading && (
-              <p className="text-center text-gray-500">Carregando pedidos...</p>
+              <p className="text-center text-gray-500 py-10">
+                Carregando pedidos...
+              </p>
             )}
 
             {!loading &&
@@ -94,7 +98,7 @@ export default function ListaDePedidos() {
                           Pedido #{pedido.id}
                         </p>
                         {pedido.descricao && (
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-gray-600 mt-1 italic">
                             {pedido.descricao}
                           </p>
                         )}
@@ -105,14 +109,16 @@ export default function ListaDePedidos() {
                             ? `AOA ${pedido.valor_sugerido}`
                             : "-"}
                         </p>
-                        <p className="text-xs text-gray-400">Valor Estimado</p>
+                        <p className="text-xs text-gray-400 font-medium">
+                          Valor Estimado
+                        </p>
                       </div>
                     </div>
 
                     {/* Endereços */}
                     <div className="space-y-3">
-                      <div className="flex items-center text-sm">
-                        <i className="fas fa-location-arrow mr-3 text-blue-500"></i>
+                      <div className="flex items-start text-sm">
+                        <i className="fas fa-location-arrow mt-1 mr-3 text-blue-500"></i>
                         <div>
                           <p className="font-semibold text-gray-700">Origem:</p>
                           <p className="text-gray-600">
@@ -120,8 +126,8 @@ export default function ListaDePedidos() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center text-sm">
-                        <i className="fas fa-map-marker-alt mr-3 text-red-500"></i>
+                      <div className="flex items-start text-sm">
+                        <i className="fas fa-map-marker-alt mt-1 mr-3 text-red-500"></i>
                         <div>
                           <p className="font-semibold text-gray-700">
                             Destino:
@@ -134,12 +140,29 @@ export default function ListaDePedidos() {
                     </div>
 
                     {/* Detalhes adicionais */}
-                    <div className="pt-3 border-t border-gray-100 text-sm text-gray-500 space-y-1">
-                      {pedido.tipo_item && <p>Tipo: {pedido.tipo_item}</p>}
-                      {pedido.peso_kg && <p>Peso: {pedido.peso_kg} kg</p>}
-                      {pedido.tamanho && <p>Tamanho: {pedido.tamanho}</p>}
+                    <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-2 text-sm text-gray-500">
+                      {pedido.tipo_item && (
+                        <p>
+                          <span className="font-medium">Tipo:</span>{" "}
+                          {pedido.tipo_item}
+                        </p>
+                      )}
+                      {pedido.peso_kg && (
+                        <p>
+                          <span className="font-medium">Peso:</span>{" "}
+                          {pedido.peso_kg} kg
+                        </p>
+                      )}
+                      {pedido.tamanho && (
+                        <p>
+                          <span className="font-medium">Tamanho:</span>{" "}
+                          {pedido.tamanho}
+                        </p>
+                      )}
                       {pedido.urgencia !== null && (
-                        <p>Urgência: {pedido.urgencia}</p>
+                        <p className="text-orange-600 font-medium">
+                          Urgência: {pedido.urgencia}
+                        </p>
                       )}
                     </div>
 
@@ -148,14 +171,20 @@ export default function ListaDePedidos() {
                       <button
                         disabled={aceitandoId === pedido.id}
                         onClick={() => handleAceitar(pedido.id)}
-                        className={`px-6 py-2 font-bold rounded-lg shadow-md flex items-center transition
+                        className={`px-8 py-3 font-bold rounded-lg shadow-md flex items-center transition active:scale-95
                           ${
                             aceitandoId === pedido.id
-                              ? "bg-gray-400 cursor-not-allowed"
+                              ? "bg-gray-400 cursor-not-allowed text-white"
                               : "bg-blue-600 hover:bg-blue-700 text-white"
                           }`}
                       >
-                        <i className="fas fa-motorcycle mr-2"></i>
+                        <i
+                          className={`fas ${
+                            aceitandoId === pedido.id
+                              ? "fa-spinner fa-spin"
+                              : "fa-motorcycle"
+                          } mr-2`}
+                        ></i>
                         {aceitandoId === pedido.id
                           ? "Aceitando..."
                           : "Aceitar Corrida"}
@@ -166,20 +195,20 @@ export default function ListaDePedidos() {
               ))}
 
             {!loading && pedidosOrdenados.length === 0 && (
-              <div className="bg-white p-10 rounded-xl text-center shadow-lg border-l-4 border-blue-600">
-                <i className="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+              <div className="bg-white p-10 rounded-xl text-center shadow-lg border-l-4 border-blue-600 mt-4">
+                <i className="fas fa-box-open text-6xl text-gray-200 mb-4"></i>
                 <p className="text-xl font-semibold text-gray-700">
-                  Nenhum pedido disponível no momento.
+                  Nenhum pedido disponível.
                 </p>
                 <p className="text-gray-500 mt-2">
-                  Mantenha-se online e verifique novamente em breve.
+                  Tente atualizar a página ou aguarde novas solicitações.
                 </p>
               </div>
             )}
 
             {/* BOTÃO VER MAIS REGISTROS */}
             {!loading && pedidosOrdenados.length > 0 && (
-              <div className="pt-4">
+              <div className="pt-4 pb-10">
                 <button
                   className="w-full py-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
                   onClick={() => toast("Carregando mais pedidos...")}
