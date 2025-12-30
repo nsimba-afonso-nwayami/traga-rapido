@@ -236,7 +236,7 @@ export default function HistoricoPedidos() {
           {!loading && pedidosFiltrados.length > 6 && (
             <div className="pt-4">
               <button
-                className={`w-full py-4 border-2 border-dashed font-bold rounded-xl transition-all flex items-center justify-center gap-2 
+                className={`w-full cursor-pointer py-4 border-2 border-dashed font-bold rounded-xl transition-all flex items-center justify-center gap-2 
                   ${
                     isExpanded
                       ? "bg-red-50 border-red-200 text-red-500 hover:bg-red-100"
