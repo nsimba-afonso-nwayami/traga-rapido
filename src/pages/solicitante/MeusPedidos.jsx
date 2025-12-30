@@ -171,7 +171,8 @@ export default function MeusPedidos() {
                 Nenhum pedido encontrado.
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              /* ALTERADO: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 para manter 3 colunas */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {registrosParaExibir.map((pedido) => {
                   const statusInfo = getStatusData(pedido.status);
                   return (
