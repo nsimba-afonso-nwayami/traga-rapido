@@ -171,7 +171,7 @@ export default function ListaDePedidos() {
                       <button
                         disabled={aceitandoId === pedido.id}
                         onClick={() => handleAceitar(pedido.id)}
-                        className={`px-8 py-3 font-bold rounded-lg shadow-md flex items-center transition active:scale-95
+                        className={`px-8 py-3 cursor-pointer font-bold rounded-lg shadow-md flex items-center transition active:scale-95
                           ${
                             aceitandoId === pedido.id
                               ? "bg-gray-400 cursor-not-allowed text-white"
