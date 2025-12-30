@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
@@ -9,19 +9,39 @@ import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante"
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 import { listarPedidosPorSolicitante } from "../../services/pedidoService";
 
-// Função utilitária para formatar o status com cor
-const getStatusClasses = (status) => {
-  switch (status) {
-    case "Em Rota":
-      return "bg-yellow-500/20 text-yellow-800";
-    case "Concluído":
-      return "bg-green-500/20 text-green-800";
-    case "Cancelado":
-      return "bg-red-500/20 text-red-800";
-    case "Pendente":
-    default:
-      return "bg-blue-500/20 text-blue-800";
-  }
+// MAPEAMENTO DE STATUS: Cores e Nomes amigáveis
+const STATUS_MAP = {
+  AGUARDANDO_PROPOSTAS: {
+    label: "Aguardando Propostas",
+    class: "bg-blue-500/20 text-blue-800",
+  },
+  PROPOSTA_ACEITA: {
+    label: "Proposta Aceita",
+    class: "bg-indigo-500/20 text-indigo-800",
+  },
+  ENTREGADOR_A_CAMINHO: {
+    label: "Entregador a Caminho",
+    class: "bg-yellow-500/20 text-yellow-800",
+  },
+  ITEM_RETIRADO: {
+    label: "Item Retirado",
+    class: "bg-orange-500/20 text-orange-800",
+  },
+  EM_ENTREGA: {
+    label: "Em Rota de Entrega",
+    class: "bg-purple-500/20 text-purple-800",
+  },
+  ENTREGUE: { label: "Entregue", class: "bg-green-500/20 text-green-800" },
+  CANCELADO: { label: "Cancelado", class: "bg-red-500/20 text-red-800" },
+};
+
+const getStatusData = (status) => {
+  return (
+    STATUS_MAP[status] || {
+      label: status,
+      class: "bg-gray-500/20 text-gray-800",
+    }
+  );
 };
 
 export default function MeusPedidos() {
@@ -31,14 +51,14 @@ export default function MeusPedidos() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const { user } = useAuth(); //
+  const [isExpanded, setIsExpanded] = useState(false);
+  const topoListaRef = useRef(null);
+
+  const { user } = useAuth();
   const SOLICITANTE_ID = user?.id;
 
-  // Simula um estado para controlar se há mais a carregar (para fins de UI)
-  const [hasMore, setHasMore] = useState(true);
-
   useEffect(() => {
-    if (!SOLICITANTE_ID) return; // evita chamada se usuário ainda não estiver carregado
+    if (!SOLICITANTE_ID) return;
 
     async function carregarPedidos() {
       try {
@@ -47,7 +67,6 @@ export default function MeusPedidos() {
           (a, b) => new Date(b.criado_em) - new Date(a.criado_em)
         );
         setPedidos(meusPedidos);
-        setHasMore(meusPedidos.length >= 2);
       } catch (error) {
         console.error("Erro ao carregar pedidos:", error);
         toast.error("Erro ao carregar pedidos");
@@ -55,39 +74,32 @@ export default function MeusPedidos() {
         setLoading(false);
       }
     }
-
     carregarPedidos();
   }, [SOLICITANTE_ID]);
 
-  // Função fictícia para simular o clique do "Ver Mais"
-  function handleVerMais() {
-    toast.success("Simulando o carregamento de mais pedidos...");
-    // Aqui viria a lógica real para buscar a próxima página de pedidos
-    // Por exemplo: loadNextPageOfPedidos(SOLICITANTE_ID, currentPage + 1);
+  const pedidosFiltrados = pedidos.filter((pedido) => {
+    const busca = search.toLowerCase();
+    const matchesSearch =
+      (pedido.titulo || "").toLowerCase().includes(busca) ||
+      (pedido.origem_endereco || "").toLowerCase().includes(busca) ||
+      (pedido.destino_endereco || "").toLowerCase().includes(busca);
+
+    const matchesStatus = statusFilter ? pedido.status === statusFilter : true;
+    return matchesSearch && matchesStatus;
+  });
+
+  const registrosParaExibir = isExpanded
+    ? pedidosFiltrados
+    : pedidosFiltrados.slice(0, 6);
+
+  function handleToggleVerMais() {
+    if (isExpanded) {
+      setIsExpanded(false);
+      topoListaRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setIsExpanded(true);
+    }
   }
-
-  // Filtrar e pesquisar pedidos
-  const pedidosFiltrados = pedidos
-    .filter((pedido) => {
-      const busca = search.toLowerCase();
-      const titulo = pedido.titulo.toLowerCase();
-      const origem = (pedido.origem_endereco || "").toLowerCase();
-      const destino = (pedido.destino_endereco || "").toLowerCase();
-      const entregador = (pedido.entregador || "").toLowerCase();
-
-      const matchesSearch =
-        titulo.includes(busca) ||
-        origem.includes(busca) ||
-        destino.includes(busca) ||
-        entregador.includes(busca);
-
-      const matchesStatus = statusFilter
-        ? (pedido.status || "Pendente") === statusFilter
-        : true;
-
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
 
   return (
     <div className="min-h-screen flex bg-gray-100 overflow-hidden">
@@ -102,12 +114,10 @@ export default function MeusPedidos() {
           setSidebarOpen={setSidebarOpen}
         />
 
-        {/* ÁREA DE CONTEÚDO COM ROLAGEM INDEPENDENTE */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gray-100">
-          {/* ESPAÇADOR PARA O HEADER FIXO */}
-          <div className="h-20 w-full shrink-0"></div>
+          <div ref={topoListaRef} className="h-20 w-full shrink-0"></div>
 
-          {/* Barra de pesquisa e filtros */}
+          {/* Filtros */}
           <div className="bg-white p-4 sm:p-6 border border-gray-300 rounded-xl shadow-lg">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">
               Filtrar Pedidos
@@ -119,7 +129,7 @@ export default function MeusPedidos() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por Título, Cidade ou Entregador..."
+                  placeholder="Buscar por Título, Cidade ou Endereço..."
                   className="w-full p-2 pl-9 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
@@ -130,10 +140,11 @@ export default function MeusPedidos() {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="">Status (Todos)</option>
-                <option value="Em Rota">Em Rota</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Concluído">Concluído</option>
-                <option value="Cancelado">Cancelado</option>
+                {Object.keys(STATUS_MAP).map((key) => (
+                  <option key={key} value={key}>
+                    {STATUS_MAP[key].label}
+                  </option>
+                ))}
               </select>
 
               <Link
@@ -143,106 +154,109 @@ export default function MeusPedidos() {
                     loading
                       ? "opacity-70 cursor-not-allowed"
                       : "hover:bg-blue-700"
-                  }
-                `}
+                  }`}
               >
-                <i className="fas fa-plus-circle mr-2"></i>
-                Novo Pedido
+                <i className="fas fa-plus-circle mr-2"></i> Novo Pedido
               </Link>
             </div>
           </div>
 
-          {/* Lista de Cards de Pedidos */}
           <div className="space-y-4">
-            {loading && (
+            {loading ? (
               <p className="text-center text-gray-500 p-8 bg-white rounded-xl shadow">
-                Carregando seus pedidos de entrega...
+                Carregando...
               </p>
-            )}
-
-            {!loading && pedidosFiltrados.length === 0 && (
+            ) : pedidosFiltrados.length === 0 ? (
               <p className="text-center text-gray-500 p-8 bg-white rounded-xl shadow">
-                Nenhum pedido de entrega encontrado com os filtros aplicados.
+                Nenhum pedido encontrado.
               </p>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {pedidosFiltrados.map((pedido) => (
-                <div
-                  key={pedido.id}
-                  className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col justify-between"
-                >
-                  <div className="p-5 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <h4
-                        className="text-lg font-bold text-gray-800 truncate pr-2"
-                        title={pedido.titulo}
-                      >
-                        {pedido.titulo}
-                      </h4>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusClasses(
-                          pedido.status || "Pendente"
-                        )}`}
-                      >
-                        {pedido.status || "Pendente"}
-                      </span>
-                    </div>
-
-                    <div className="text-sm text-gray-500 space-y-1 border-t pt-3">
-                      <div className="flex items-center">
-                        <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                        <span className="font-medium text-gray-700 mr-1">
-                          Origem:
-                        </span>{" "}
-                        {pedido.origem_endereco}
-                      </div>
-                      <div className="flex items-center">
-                        <i className="fas fa-map-marked-alt text-green-500 mr-2"></i>
-                        <span className="font-medium text-gray-700 mr-1">
-                          Destino:
-                        </span>{" "}
-                        {pedido.destino_endereco}
-                      </div>
-                      <div className="flex items-center">
-                        <i className="fas fa-motorcycle text-blue-500 mr-2"></i>
-                        <span className="font-medium text-gray-700 mr-1">
-                          Entregador:
-                        </span>{" "}
-                        {pedido.entregador || "Aguardando"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-5 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
-                    <p className="text-xs text-gray-400">
-                      Criado em:{" "}
-                      {pedido.criado_em
-                        ? format(new Date(pedido.criado_em), "dd/MM/yyyy", {
-                            locale: ptBR,
-                          })
-                        : "N/A"}
-                    </p>
-                    <Link
-                      to={`/dashboard/solicitante/detalhes-pedido/${pedido.id}`}
-                      className="text-blue-700 hover:text-blue-500 text-base"
-                      title="Ver Detalhes do Pedido"
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {registrosParaExibir.map((pedido) => {
+                  const statusInfo = getStatusData(pedido.status);
+                  return (
+                    <div
+                      key={pedido.id}
+                      className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex flex-col justify-between"
                     >
-                      <i className="fas fa-eye"></i>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      <div className="p-5 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <h4
+                            className="text-lg font-bold text-gray-800 truncate pr-2"
+                            title={pedido.titulo}
+                          >
+                            {pedido.titulo}
+                          </h4>
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${statusInfo.class}`}
+                          >
+                            {statusInfo.label}
+                          </span>
+                        </div>
 
-            {!loading && pedidosFiltrados.length > 0 && hasMore && (
+                        <div className="text-sm text-gray-500 space-y-1 border-t pt-3">
+                          <div className="flex items-center">
+                            <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                            <span className="font-medium text-gray-700 mr-1">
+                              Origem:
+                            </span>{" "}
+                            {pedido.origem_endereco}
+                          </div>
+                          <div className="flex items-center">
+                            <i className="fas fa-map-marked-alt text-green-500 mr-2"></i>
+                            <span className="font-medium text-gray-700 mr-1">
+                              Destino:
+                            </span>{" "}
+                            {pedido.destino_endereco}
+                          </div>
+                          <div className="flex items-center">
+                            <i className="fas fa-motorcycle text-blue-500 mr-2"></i>
+                            <span className="font-medium text-gray-700 mr-1">
+                              Entregador:
+                            </span>{" "}
+                            {pedido.entregador || "Aguardando"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-5 border-t border-gray-100 flex justify-between items-center bg-gray-50 rounded-b-xl">
+                        <p className="text-xs text-gray-400">
+                          {pedido.criado_em
+                            ? format(new Date(pedido.criado_em), "dd/MM/yyyy", {
+                                locale: ptBR,
+                              })
+                            : "N/A"}
+                        </p>
+                        <Link
+                          to={`/dashboard/solicitante/detalhes-pedido/${pedido.id}`}
+                          className="text-blue-700 hover:text-blue-500 text-base"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {!loading && pedidosFiltrados.length > 6 && (
               <div className="pt-4">
                 <button
-                  className="w-full py-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 font-bold rounded-xl hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500 transition-all flex items-center justify-center gap-2"
-                  onClick={handleVerMais}
+                  className={`w-full cursor-pointer py-4 border-2 border-dashed font-bold rounded-xl transition-all flex items-center justify-center gap-2 
+                    ${
+                      isExpanded
+                        ? "bg-red-50 border-red-200 text-red-500 hover:bg-red-100"
+                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500"
+                    }`}
+                  onClick={handleToggleVerMais}
                 >
-                  <i className="fas fa-plus-circle"></i>
-                  VER MAIS PEDIDOS
+                  <i
+                    className={`fas ${
+                      isExpanded ? "fa-minus-circle" : "fa-plus-circle"
+                    }`}
+                  ></i>
+                  {isExpanded ? "VER MENOS" : "VER MAIS PEDIDOS"}
                 </button>
               </div>
             )}
@@ -250,7 +264,8 @@ export default function MeusPedidos() {
 
           <div className="flex justify-end pt-4 border-t border-gray-300 mb-6">
             <p className="text-gray-600 text-sm">
-              Mostrando {pedidosFiltrados.length} pedidos.
+              Mostrando {registrosParaExibir.length} de{" "}
+              {pedidosFiltrados.length} pedidos.
             </p>
           </div>
         </main>
