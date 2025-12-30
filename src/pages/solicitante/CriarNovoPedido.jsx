@@ -186,7 +186,6 @@ export default function CriarNovoPedido() {
         destino_longitude: destinoCoords.lng,
         valor_sugerido: data.valor_sugerido ? Number(data.valor_sugerido) : null,
         solicitante: user.id,
-        entregador: 3,
       };
       
       const pedidoCriado = await criarPedido(payload);
