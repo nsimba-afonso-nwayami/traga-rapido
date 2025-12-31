@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
@@ -6,9 +7,11 @@ import {
   listarPedidosDisponiveis,
   aceitarPedido,
 } from "../../services/pedidoService";
+import { getUsuario } from "../../services/usuarioService"; // Importando o service de usuário
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function ListaDePedidos() {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +24,27 @@ export default function ListaDePedidos() {
     async function fetchPedidos() {
       try {
         const pedidosDisponiveis = await listarPedidosDisponiveis();
-        setPedidos(pedidosDisponiveis);
+
+        // Buscando dados do solicitante para cada pedido
+        const pedidosEnriquecidos = await Promise.all(
+          pedidosDisponiveis.map(async (pedido) => {
+            try {
+              if (pedido.solicitante) {
+                const dadosUser = await getUsuario(pedido.solicitante);
+                return {
+                  ...pedido,
+                  usernameSolicitante: dadosUser.username,
+                  telefoneSolicitante: dadosUser.telefone,
+                };
+              }
+              return pedido;
+            } catch (err) {
+              return pedido;
+            }
+          })
+        );
+
+        setPedidos(pedidosEnriquecidos);
       } catch (error) {
         console.error("Erro ao listar pedidos:", error);
         toast.error("Erro ao carregar pedidos.");
@@ -40,6 +63,7 @@ export default function ListaDePedidos() {
       await aceitarPedido(pedidoId);
       setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
       toast.success("Pedido aceito com sucesso!", { id: toastId });
+      navigate(`/dashboard/entregador/detalhes-corrida/${pedidoId}`);
     } catch (error) {
       console.error("Erro ao aceitar pedido:", error);
       toast.error("Não foi possível aceitar o pedido.", { id: toastId });
@@ -60,7 +84,7 @@ export default function ListaDePedidos() {
         setSidebarOpen={setSidebarOpen}
       />
 
-      {/* Container Principal com h-screen e overflow-hidden para travar a barra externa */}
+      {/* Container Principal */}
       <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
         {/* HEADER FIXO */}
         <HeaderEntregador
@@ -68,9 +92,8 @@ export default function ListaDePedidos() {
           setSidebarOpen={setSidebarOpen}
         />
 
-        {/* ÁREA DE CONTEÚDO COM ROLAGEM PRÓPRIA */}
+        {/* ÁREA DE CONTEÚDO */}
         <main className="flex-1 overflow-y-auto bg-gray-100 px-4 sm:px-6 pb-10">
-          {/* ESPAÇADOR MANUAL: Impede que o menu cubra os primeiros cards */}
           <div className="h-20 w-full shrink-0"></div>
 
           <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
@@ -97,8 +120,32 @@ export default function ListaDePedidos() {
                         <p className="text-xs text-gray-500">
                           Pedido #{pedido.id}
                         </p>
+
+                        {/* EXIBIÇÃO DO SOLICITANTE */}
+                        <p className="text-sm font-bold text-blue-700 mt-2">
+                          Solicitante:{" "}
+                          {pedido.usernameSolicitante || "Carregando..."}
+                        </p>
+
+                        {/* CONTATO ESTILIZADO COMO BOTÃO LINK */}
+                        <div className="mt-2">
+                          {pedido.telefoneSolicitante ? (
+                            <a
+                              href={`tel:${pedido.telefoneSolicitante}`}
+                              className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md hover:bg-green-700 transition-colors shadow-sm"
+                            >
+                              <i className="fas fa-phone mr-2"></i>
+                              Ligar: {pedido.telefoneSolicitante}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-gray-600 font-medium">
+                              Contato: N/A
+                            </p>
+                          )}
+                        </div>
+
                         {pedido.descricao && (
-                          <p className="text-sm text-gray-600 mt-1 italic">
+                          <p className="text-sm text-gray-600 mt-2 italic">
                             {pedido.descricao}
                           </p>
                         )}
@@ -206,7 +253,6 @@ export default function ListaDePedidos() {
               </div>
             )}
 
-            {/* BOTÃO VER MAIS REGISTROS */}
             {!loading && pedidosOrdenados.length > 0 && (
               <div className="pt-4 pb-10">
                 <button
