@@ -8,6 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 import { listarPedidosPorSolicitante } from "../../services/pedidoService";
+import { getUsuario } from "../../services/usuarioService"; // Importado para buscar o nome
 
 // MAPEAMENTO DE STATUS: Cores e Nomes amigáveis
 const STATUS_MAP = {
@@ -63,10 +64,26 @@ export default function MeusPedidos() {
     async function carregarPedidos() {
       try {
         const meusPedidos = await listarPedidosPorSolicitante(SOLICITANTE_ID);
-        meusPedidos.sort(
+
+        // Enriquecer pedidos com o nome do entregador
+        const pedidosComNomes = await Promise.all(
+          meusPedidos.map(async (pedido) => {
+            if (pedido.entregador && typeof pedido.entregador === "number") {
+              try {
+                const dadosEntregador = await getUsuario(pedido.entregador);
+                return { ...pedido, nomeEntregador: dadosEntregador.username };
+              } catch {
+                return pedido;
+              }
+            }
+            return pedido;
+          })
+        );
+
+        pedidosComNomes.sort(
           (a, b) => new Date(b.criado_em) - new Date(a.criado_em)
         );
-        setPedidos(meusPedidos);
+        setPedidos(pedidosComNomes);
       } catch (error) {
         console.error("Erro ao carregar pedidos:", error);
         toast.error("Erro ao carregar pedidos");
@@ -171,7 +188,6 @@ export default function MeusPedidos() {
                 Nenhum pedido encontrado.
               </p>
             ) : (
-              /* ALTERADO: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 para manter 3 colunas */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {registrosParaExibir.map((pedido) => {
                   const statusInfo = getStatusData(pedido.status);
@@ -215,7 +231,16 @@ export default function MeusPedidos() {
                             <span className="font-medium text-gray-700 mr-1">
                               Entregador:
                             </span>{" "}
-                            {pedido.entregador || "Aguardando"}
+                            {/* EXIBIÇÃO DO NOME DO ENTREGADOR AQUI */}
+                            <span
+                              className={
+                                pedido.nomeEntregador
+                                  ? "text-blue-700 font-bold"
+                                  : ""
+                              }
+                            >
+                              {pedido.nomeEntregador || "Aguardando"}
+                            </span>
                           </div>
                         </div>
                       </div>
