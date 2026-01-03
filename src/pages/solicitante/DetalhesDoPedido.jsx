@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
@@ -43,10 +43,17 @@ export default function DetalhesDoPedido() {
   const [entregadorInfo, setEntregadorInfo] = useState(null);
   const [rotaCaminho, setRotaCaminho] = useState([]);
 
-  useEffect(() => {
-    async function carregarPedido() {
+  // Função para carregar os dados
+  const carregarPedido = useCallback(
+    async (isAutoRefresh = false) => {
       try {
         const data = await obterPedidoPorId(id);
+
+        // Se for uma atualização automática, mostra o toast
+        if (isAutoRefresh) {
+          toast.success("Status atualizado", { id: "refresh-toast" }); // 'id' evita duplicar toasts se clicar rápido
+        }
+
         setPedido(data);
 
         if (data.entregador) {
@@ -66,12 +73,24 @@ export default function DetalhesDoPedido() {
             data.destino_longitude
           );
         }
-      } catch {
-        toast.error("Erro ao carregar pedido");
+      } catch (err) {
+        if (!isAutoRefresh) toast.error("Erro ao carregar pedido");
+        console.error(err);
       }
-    }
-    carregarPedido();
-  }, [id]);
+    },
+    [id]
+  );
+
+  // Configuração do Intervalo de 10 segundos
+  useEffect(() => {
+    carregarPedido(false); // Carregamento inicial (sem toast)
+
+    const interval = setInterval(() => {
+      carregarPedido(true); // Atualização automática (com toast)
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [carregarPedido]);
 
   const calcularRota = async (lat1, lon1, lat2, lon2) => {
     try {
@@ -96,8 +115,7 @@ export default function DetalhesDoPedido() {
     try {
       await cancelarPedido(pedido.id);
       toast.success("Pedido cancelado com sucesso");
-      const data = await obterPedidoPorId(pedido.id);
-      setPedido(data);
+      carregarPedido(false);
     } catch (error) {
       toast.error("Não foi possível cancelar o pedido");
     }
@@ -179,26 +197,22 @@ export default function DetalhesDoPedido() {
                       value={`${pedido.peso_kg} kg`}
                       icon="weight-hanging"
                     />
-
                     <DetalheItem
                       label="Entregador Alocado"
                       value={entregadorInfo?.username || "Aguardando propostas"}
                       icon="user-circle"
                     />
-
-                    {/* BOTÃO DE LIGAR ADICIONADO AQUI */}
                     {entregadorInfo?.telefone && (
                       <DetalheItem label="Contato" icon="phone">
                         <a
                           href={`tel:${entregadorInfo.telefone}`}
                           className="mt-1 inline-flex items-center justify-center w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition duration-150 shadow-sm gap-2"
                         >
-                          <i className="fas fa-phone"></i>
-                          LIGAR: {entregadorInfo.telefone}
+                          <i className="fas fa-phone"></i> LIGAR:{" "}
+                          {entregadorInfo.telefone}
                         </a>
                       </DetalheItem>
                     )}
-
                     <DetalheItem
                       label="Valor do Serviço"
                       value={`Kz ${
@@ -223,7 +237,6 @@ export default function DetalhesDoPedido() {
                     <i className="fas fa-map-marked-alt mr-3"></i> Localização e
                     Rota
                   </h3>
-
                   <div className="w-full h-80 rounded-lg overflow-hidden border border-gray-200 z-10 relative">
                     <MapContainer
                       center={[
@@ -235,7 +248,6 @@ export default function DetalhesDoPedido() {
                       className="w-full h-full"
                     >
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
                       {pedido.origem_latitude && (
                         <Marker
                           position={[
@@ -251,7 +263,6 @@ export default function DetalhesDoPedido() {
                           </Popup>
                         </Marker>
                       )}
-
                       {pedido.destino_latitude && (
                         <Marker
                           position={[
@@ -267,7 +278,6 @@ export default function DetalhesDoPedido() {
                           </Popup>
                         </Marker>
                       )}
-
                       {rotaCaminho.length > 0 && (
                         <Polyline
                           positions={rotaCaminho}
@@ -276,7 +286,6 @@ export default function DetalhesDoPedido() {
                           opacity={0.7}
                         />
                       )}
-
                       <FitRoute
                         positions={
                           rotaCaminho.length > 0
@@ -307,7 +316,6 @@ export default function DetalhesDoPedido() {
                       {pedido.origem_endereco}
                     </p>
                   </div>
-
                   <div className="bg-white p-5 rounded-xl shadow border-l-4 border-l-red-500 border-gray-300">
                     <h4 className="font-bold text-sm text-red-700 flex items-center mb-2 uppercase tracking-wider">
                       <i className="fas fa-flag-checkered mr-2"></i> Ponto de
