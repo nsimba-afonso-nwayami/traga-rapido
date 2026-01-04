@@ -44,14 +44,6 @@ export default function SidebarEntregador({ sidebarOpen, setSidebarOpen }) {
             Lista de Pedidos
           </Link>
 
-          <Link
-            to="/dashboard/entregador/detalhes-corrida"
-            className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors"
-          >
-            <i className="fas fa-route mr-3 text-blue-400"></i>
-            Detalhes da Corrida
-          </Link>
-
           <hr className="border-blue-700 my-4" />
 
           <Link
