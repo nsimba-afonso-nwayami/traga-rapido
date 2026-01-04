@@ -72,7 +72,6 @@ export default function AppRoutes() {
         <Route path="/dashboard/entregador">
           <Route index element={<DashboardEntregador />} />
           <Route path="lista-pedidos" element={<ListaDePedidos />} />
-          <Route path="detalhes-corrida/" element={<DetalhesCorrida />} />
           <Route path="historico" element={<HistoricoEntregador />} />
           <Route path="notificacoes" element={<NotificacoesEntregador />} />
           <Route path="configuracoes" element={<ConfiguracoesEntregador />} />
