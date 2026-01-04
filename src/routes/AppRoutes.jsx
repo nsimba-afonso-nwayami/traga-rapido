@@ -28,7 +28,6 @@ import NotFoundSolicitante from "../pages/solicitante/NotFoundSolicitante";
 // Entregador
 import DashboardEntregador from "../pages/entregador/Dashboard";
 import ListaDePedidos from "../pages/entregador/ListaDePedidos";
-import DetalhesCorrida from "../pages/entregador/DetalhesCorrida";
 import HistoricoEntregador from "../pages/entregador/HistoricoEntregador";
 import NotificacoesEntregador from "../pages/entregador/NotificacoesEntregador";
 import ConfiguracoesEntregador from "../pages/entregador/ConfiguracoesEntregador";
