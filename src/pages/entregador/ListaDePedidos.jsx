@@ -505,7 +505,7 @@ export default function ListaDePedidos() {
                     <i className="fas fa-box-open text-6xl"></i>
                   </div>
                   <p className="text-gray-500 font-bold text-xl">
-                    Não há novos pedidos para aceite.
+                    Não há novos pedidos para ser aceite.
                   </p>
                   <button
                     onClick={() => carregarDados(true)}
