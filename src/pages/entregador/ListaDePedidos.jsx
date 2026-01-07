@@ -22,13 +22,32 @@ import {
 } from "../../services/pedidoService";
 import { getUsuario } from "../../services/usuarioService";
 
-const customIcon = new L.Icon({
+const iconOrigem = new L.Icon({
   iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
+});
+
+const iconDestino = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const deliveryIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/71/71422.png",
+  iconSize: [35, 35],
+  iconAnchor: [17, 17],
 });
 
 function FitRoute({ positions }) {
@@ -36,7 +55,7 @@ function FitRoute({ positions }) {
   useEffect(() => {
     const validPositions =
       positions?.filter((p) => p && p[0] != null && p[1] != null) || [];
-    if (validPositions.length > 0) {
+    if (validPositions.length > 1) {
       const bounds = L.latLngBounds(validPositions);
       map.fitBounds(bounds, { padding: [50, 50] });
     }
@@ -82,87 +101,64 @@ export default function ListaDePedidos() {
   const [aceitandoId, setAceitandoId] = useState(null);
   const [pedidoAtivo, setPedidoAtivo] = useState(null);
   const [rotaCaminho, setRotaCaminho] = useState([]);
+  const [minhaPosicao, setMinhaPosicao] = useState(null);
+  const [metricas, setMetricas] = useState({ distancia: "", tempo: "" });
 
-  const calcularRota = useCallback(async (lat1, lon1, lat2, lon2) => {
-    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return;
-    try {
-      const resp = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`
-      );
-      const data = await resp.json();
-      if (data.routes && data.routes.length > 0) {
-        const pontos = data.routes[0].geometry.coordinates.map((p) => [
-          p[1],
-          p[0],
-        ]);
-        setRotaCaminho(pontos);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setMinhaPosicao([pos.coords.latitude, pos.coords.longitude]),
+      (err) => console.error(err),
+      { enableHighAccuracy: true }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // Lógica de carregamento centralizada
+  const abrirNoMaps = (lat, lon) => {
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=motorcycle`,
+      "_blank"
+    );
+  };
+
+  const abrirWhatsApp = (telefone, titulo) => {
+    const msg = encodeURIComponent(
+      `Olá, sou o entregador do seu pedido "${titulo}". Já estou a caminho!`
+    );
+    window.open(
+      `https://wa.me/${telefone.replace(/\D/g, "")}?text=${msg}`,
+      "_blank"
+    );
+  };
+
   const carregarDados = useCallback(
     async (isFirstLoad = false) => {
       if (isFirstLoad) setLoading(true);
       try {
         const disponiveis = await listarPedidosDisponiveis();
         const logadoId = localStorage.getItem("userId");
-
         const emProgresso = disponiveis.find(
           (p) =>
             String(p.entregador) === String(logadoId) && p.status !== "ENTREGUE"
         );
 
         if (emProgresso) {
-          // Só busca usuário se o pedido ativo mudou ou é novo
           if (
             !pedidoAtivo ||
             pedidoAtivo.id !== emProgresso.id ||
             pedidoAtivo.status !== emProgresso.status
           ) {
             const u = await getUsuario(emProgresso.solicitante);
-            const completo = {
+            setPedidoAtivo({
               ...emProgresso,
               usernameSolicitante: u.username,
               telefoneSolicitante: u.telefone,
-            };
-            setPedidoAtivo(completo);
-            if (
-              completo.origem_latitude != null &&
-              completo.destino_latitude != null
-            ) {
-              calcularRota(
-                completo.origem_latitude,
-                completo.origem_longitude,
-                completo.destino_latitude,
-                completo.destino_longitude
-              );
-            }
+            });
           }
         } else {
           setPedidoAtivo(null);
-          if (disponiveis.length > 0) {
-            const p = disponiveis[0];
-            // Se o primeiro da lista mudou, atualiza
-            if (pedidos.length === 0 || pedidos[0].id !== p.id) {
-              try {
-                const u = await getUsuario(p.solicitante);
-                setPedidos([
-                  {
-                    ...p,
-                    usernameSolicitante: u.username,
-                    telefoneSolicitante: u.telefone,
-                  },
-                ]);
-              } catch {
-                setPedidos([p]);
-              }
-            }
-          } else {
-            setPedidos([]);
-          }
+          const abertos = disponiveis.filter((p) => !p.entregador);
+          setPedidos(abertos.length > 0 ? [abertos[0]] : []);
         }
       } catch (error) {
         if (isFirstLoad) toast.error("Erro ao carregar dados.");
@@ -170,23 +166,64 @@ export default function ListaDePedidos() {
         if (isFirstLoad) setLoading(false);
       }
     },
-    [pedidoAtivo, pedidos, calcularRota]
+    [pedidoAtivo]
   );
 
-  // Efeito de Refresh Automático (5 segundos)
   useEffect(() => {
-    carregarDados(true); // Carga inicial
-    const interval = setInterval(() => carregarDados(false), 5000);
+    carregarDados(true);
+    const interval = setInterval(() => {
+      if (pedidoAtivo || pedidos.length > 0) {
+        carregarDados(false);
+      } else {
+        clearInterval(interval);
+      }
+    }, 5000);
     return () => clearInterval(interval);
-  }, [carregarDados]);
+  }, [carregarDados, pedidoAtivo, pedidos.length]);
+
+  const calcularRotaCompleta = useCallback(
+    async (latE, lonE, latO, lonO, latD, lonD) => {
+      if (!latE || !latO || !latD) return;
+      try {
+        const pontos = `${lonE},${latE};${lonO},${latO};${lonD},${latD}`;
+        const resp = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${pontos}?overview=full&geometries=geojson`
+        );
+        const data = await resp.json();
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          setRotaCaminho(route.geometry.coordinates.map((p) => [p[1], p[0]]));
+          setMetricas({
+            distancia: `${(route.distance / 1000).toFixed(1)} km`,
+            tempo: `${Math.round(route.duration / 60)} min`,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (pedidoAtivo && minhaPosicao) {
+      calcularRotaCompleta(
+        minhaPosicao[0],
+        minhaPosicao[1],
+        pedidoAtivo.origem_latitude,
+        pedidoAtivo.origem_longitude,
+        pedidoAtivo.destino_latitude,
+        pedidoAtivo.destino_longitude
+      );
+    }
+  }, [minhaPosicao, pedidoAtivo, calcularRotaCompleta]);
 
   async function handleAceitar(pedido) {
     setAceitandoId(pedido.id);
     try {
       await aceitarPedido(pedido.id);
       toast.success("Corrida iniciada!");
-      // Atualiza imediatamente após aceitar
-      carregarDados(false);
+      carregarDados(true);
     } catch (error) {
       toast.error("Erro ao aceitar.");
     } finally {
@@ -197,13 +234,13 @@ export default function ListaDePedidos() {
   async function handleAtualizarStatus() {
     const config = STATUS_FLOW[pedidoAtivo.status];
     if (!config) return;
-
     try {
       await config.action(pedidoAtivo.id);
       toast.success(config.msg);
       if (config.proximo === "ENTREGUE") {
         setPedidoAtivo(null);
         setRotaCaminho([]);
+        setMetricas({ distancia: "", tempo: "" });
         carregarDados(true);
       } else {
         setPedidoAtivo({ ...pedidoAtivo, status: config.proximo });
@@ -247,22 +284,30 @@ export default function ListaDePedidos() {
                         {pedidoParaMostrar.usernameSolicitante ||
                           "Carregando..."}
                       </p>
-                      <div className="mt-2">
+                      <div className="mt-2 flex gap-2">
                         {pedidoParaMostrar.telefoneSolicitante && (
-                          <a
-                            href={`tel:${pedidoParaMostrar.telefoneSolicitante}`}
-                            className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md shadow-sm"
-                          >
-                            <i className="fas fa-phone mr-2"></i> Ligar:{" "}
-                            {pedidoParaMostrar.telefoneSolicitante}
-                          </a>
+                          <>
+                            <a
+                              href={`tel:${pedidoParaMostrar.telefoneSolicitante}`}
+                              className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md shadow-sm"
+                            >
+                              <i className="fas fa-phone mr-2"></i> Ligar:{" "}
+                              {pedidoParaMostrar.telefoneSolicitante}
+                            </a>
+                            <button
+                              onClick={() =>
+                                abrirWhatsApp(
+                                  pedidoParaMostrar.telefoneSolicitante,
+                                  pedidoParaMostrar.titulo
+                                )
+                              }
+                              className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-md shadow-sm"
+                            >
+                              <i className="fab fa-whatsapp mr-2"></i> WhatsApp
+                            </button>
+                          </>
                         )}
                       </div>
-                      {pedidoParaMostrar.descricao && (
-                        <p className="text-sm text-gray-600 mt-2 italic">
-                          {pedidoParaMostrar.descricao}
-                        </p>
-                      )}
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-green-600">
@@ -274,24 +319,74 @@ export default function ListaDePedidos() {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-start text-sm">
-                      <i className="fas fa-location-arrow mt-1 mr-3 text-blue-500"></i>
-                      <div>
-                        <p className="font-semibold text-gray-700">Origem:</p>
-                        <p className="text-gray-600">
-                          {pedidoParaMostrar.origem_endereco}
+                  {pedidoAtivo && metricas.distancia && (
+                    <div className="flex gap-4 mb-2">
+                      <div className="bg-blue-50 p-2 rounded-lg flex-1 text-center border border-blue-100">
+                        <p className="text-xs text-blue-600 font-bold uppercase">
+                          Distância Total
+                        </p>
+                        <p className="text-lg font-black text-blue-900">
+                          {metricas.distancia}
+                        </p>
+                      </div>
+                      <div className="bg-green-50 p-2 rounded-lg flex-1 text-center border border-green-100">
+                        <p className="text-xs text-green-600 font-bold uppercase">
+                          Tempo Estimado
+                        </p>
+                        <p className="text-lg font-black text-green-900">
+                          {metricas.tempo}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-start text-sm">
-                      <i className="fas fa-map-marker-alt mt-1 mr-3 text-red-500"></i>
-                      <div>
-                        <p className="font-semibold text-gray-700">Destino:</p>
-                        <p className="text-gray-600">
-                          {pedidoParaMostrar.destino_endereco}
-                        </p>
+                  )}
+
+                  <div className="space-y-4">
+                    {/* Bloco de Origem Chamativo */}
+                    <div
+                      onClick={() =>
+                        abrirNoMaps(
+                          pedidoParaMostrar.origem_latitude,
+                          pedidoParaMostrar.origem_longitude
+                        )
+                      }
+                      className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors shadow-sm"
+                    >
+                      <div className="flex items-start text-sm">
+                        <i className="fas fa-location-arrow mt-1 mr-3 text-blue-600 text-lg"></i>
+                        <div>
+                          <p className="font-bold text-blue-800 uppercase text-xs">
+                            Origem (Coleta):
+                          </p>
+                          <p className="text-gray-900 font-medium">
+                            {pedidoParaMostrar.origem_endereco}
+                          </p>
+                        </div>
                       </div>
+                      <i className="fas fa-directions text-blue-600 text-2xl ml-4"></i>
+                    </div>
+
+                    {/* Bloco de Destino Chamativo */}
+                    <div
+                      onClick={() =>
+                        abrirNoMaps(
+                          pedidoParaMostrar.destino_latitude,
+                          pedidoParaMostrar.destino_longitude
+                        )
+                      }
+                      className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition-colors shadow-sm"
+                    >
+                      <div className="flex items-start text-sm">
+                        <i className="fas fa-map-marker-alt mt-1 mr-3 text-red-600 text-lg"></i>
+                        <div>
+                          <p className="font-bold text-red-800 uppercase text-xs">
+                            Destino (Entrega):
+                          </p>
+                          <p className="text-gray-900 font-medium">
+                            {pedidoParaMostrar.destino_endereco}
+                          </p>
+                        </div>
+                      </div>
+                      <i className="fas fa-directions text-red-600 text-2xl ml-4"></i>
                     </div>
                   </div>
 
@@ -321,31 +416,34 @@ export default function ListaDePedidos() {
                     )}
                   </div>
 
-                  {pedidoAtivo && pedidoParaMostrar.origem_latitude != null && (
+                  {pedidoAtivo && (
                     <div className="mt-4 w-full h-80 rounded-lg overflow-hidden border border-gray-200 relative z-10">
                       <MapContainer
                         center={[
-                          pedidoParaMostrar.origem_latitude,
-                          pedidoParaMostrar.origem_longitude,
+                          pedidoAtivo.origem_latitude,
+                          pedidoAtivo.origem_longitude,
                         ]}
                         zoom={13}
                         className="w-full h-full"
                       >
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        {minhaPosicao && (
+                          <Marker position={minhaPosicao} icon={deliveryIcon} />
+                        )}
                         <Marker
                           position={[
-                            pedidoParaMostrar.origem_latitude,
-                            pedidoParaMostrar.origem_longitude,
+                            pedidoAtivo.origem_latitude,
+                            pedidoAtivo.origem_longitude,
                           ]}
-                          icon={customIcon}
+                          icon={iconOrigem}
                         />
-                        {pedidoParaMostrar.destino_latitude != null && (
+                        {pedidoAtivo.destino_latitude != null && (
                           <Marker
                             position={[
-                              pedidoParaMostrar.destino_latitude,
-                              pedidoParaMostrar.destino_longitude,
+                              pedidoAtivo.destino_latitude,
+                              pedidoAtivo.destino_longitude,
                             ]}
-                            icon={customIcon}
+                            icon={iconDestino}
                           />
                         )}
                         {rotaCaminho.length > 0 && (
@@ -353,23 +451,21 @@ export default function ListaDePedidos() {
                             positions={rotaCaminho}
                             color="#3b82f6"
                             weight={5}
+                            opacity={0.7}
                           />
                         )}
                         <FitRoute
-                          positions={
-                            rotaCaminho.length > 0
-                              ? rotaCaminho
-                              : [
-                                  [
-                                    pedidoParaMostrar.origem_latitude,
-                                    pedidoParaMostrar.origem_longitude,
-                                  ],
-                                  [
-                                    pedidoParaMostrar.destino_latitude,
-                                    pedidoParaMostrar.destino_longitude,
-                                  ],
-                                ].filter((p) => p[0] != null)
-                          }
+                          positions={[
+                            minhaPosicao,
+                            [
+                              pedidoAtivo.origem_latitude,
+                              pedidoAtivo.origem_longitude,
+                            ],
+                            [
+                              pedidoAtivo.destino_latitude,
+                              pedidoAtivo.destino_longitude,
+                            ],
+                          ].filter((p) => p && p[0] != null)}
                         />
                       </MapContainer>
                     </div>
@@ -404,10 +500,19 @@ export default function ListaDePedidos() {
               </div>
             ) : (
               !loading && (
-                <div className="bg-white rounded-xl shadow-lg p-10 text-center border border-gray-200">
-                  <p className="text-gray-600 text-lg">
-                    Nenhum pedido disponível.
+                <div className="bg-white rounded-2xl shadow-xl p-16 text-center border-2 border-dashed border-gray-200">
+                  <div className="mb-4 text-gray-300">
+                    <i className="fas fa-box-open text-6xl"></i>
+                  </div>
+                  <p className="text-gray-500 font-bold text-xl">
+                    Não há novos pedidos para aceite.
                   </p>
+                  <button
+                    onClick={() => carregarDados(true)}
+                    className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+                  >
+                    <i className="fas fa-sync-alt mr-2"></i> VERIFICAR NOVAMENTE
+                  </button>
                 </div>
               )
             )}
