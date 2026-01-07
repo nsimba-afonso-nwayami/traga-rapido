@@ -7,8 +7,12 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
 // Importações dos serviços
-import { listarPedidosDisponiveis } from "../../services/pedidoService";
+import {
+  listarPedidosDisponiveis,
+  listarHistoricoEntregador,
+} from "../../services/pedidoService";
 import { getUsuario } from "../../services/usuarioService";
+import { listarAvaliacoes } from "../../services/avaliacaoService";
 
 // --- CONFIGURAÇÃO LEAFLET ---
 delete L.Icon.Default.prototype._getIconUrl;
@@ -32,7 +36,13 @@ export default function DashboardEntregador() {
   const [isOnline, setIsOnline] = useState(false);
   const [ultimoPedido, setUltimoPedido] = useState(null);
 
-  // Referência para o áudio de notificação
+  // Estado para armazenar os cálculos reais
+  const [dadosCards, setDadosCards] = useState({
+    ganhosHoje: 0,
+    corridasHoje: 0,
+    avaliacaoMedia: 0,
+  });
+
   const audioNotificacao = useRef(
     new Audio(
       "https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
@@ -42,52 +52,82 @@ export default function DashboardEntregador() {
   const posicaoEntregador = [-8.839988, 13.289415];
   const raioAtuacaoMetros = 5000;
 
-  const carregarPedidoRecente = async () => {
+  const carregarDadosDashboard = async () => {
     try {
+      // 1. Carregar Pedido Mais Recente para Alerta
       const pedidos = await listarPedidosDisponiveis();
       if (pedidos.length > 0) {
         const p = pedidos[0];
-
-        // Só atualiza e toca som se for um pedido novo (ID diferente)
         if (!ultimoPedido || ultimoPedido.id !== p.id) {
           const u = await getUsuario(p.solicitante);
           setUltimoPedido({ ...p, usernameSolicitante: u.username });
-
-          // Toca o som se o navegador permitir (precisa de interação prévia do usuário)
-          audioNotificacao.current
-            .play()
-            .catch((e) => console.log("Áudio bloqueado pelo navegador"));
+          audioNotificacao.current.play().catch(() => {});
         }
       } else {
         setUltimoPedido(null);
       }
+
+      // 2. Buscar Histórico para calcular Ganhos e Corridas de HOJE
+      const historico = await listarHistoricoEntregador();
+      const hojeStr = new Date().toLocaleDateString("pt-BR");
+
+      const concluidosHoje = historico.filter((p) => {
+        const dataPedido = new Date(p.criado_em).toLocaleDateString("pt-BR");
+        return p.status === "ENTREGUE" && dataPedido === hojeStr;
+      });
+
+      const totalGanhosHoje = concluidosHoje.reduce(
+        (acc, curr) => acc + parseFloat(curr.valor_sugerido || 0),
+        0
+      );
+
+      // 3. Buscar Avaliações para calcular a Média Real
+      const avaliacoes = await listarAvaliacoes();
+      // Filtra avaliações que pertencem aos pedidos do histórico deste entregador
+      const minhasAvaliacoes = avaliacoes.filter((av) =>
+        historico.some((h) => h.id === av.pedido)
+      );
+
+      const media =
+        minhasAvaliacoes.length > 0
+          ? minhasAvaliacoes.reduce((acc, curr) => acc + curr.estrelas, 0) /
+            minhasAvaliacoes.length
+          : 0;
+
+      // Atualiza o estado consolidado
+      setDadosCards({
+        ganhosHoje: totalGanhosHoje,
+        corridasHoje: concluidosHoje.length,
+        avaliacaoMedia: media.toFixed(1),
+      });
     } catch (error) {
-      console.error("Erro no refresh:", error);
+      console.error("Erro ao atualizar dados do dashboard:", error);
     }
   };
 
   useEffect(() => {
-    carregarPedidoRecente();
-    const intervalo = setInterval(carregarPedidoRecente, 5000);
+    carregarDadosDashboard();
+    const intervalo = setInterval(carregarDadosDashboard, 5000);
     return () => clearInterval(intervalo);
   }, [ultimoPedido]);
 
+  // Estrutura dos cards consumindo o estado dinâmico
   const stats = [
     {
       title: "Ganhos Hoje",
-      value: "AOA 5.250",
+      value: `AOA ${dadosCards.ganhosHoje.toLocaleString("pt-BR")}`,
       icon: "fas fa-wallet",
       color: "text-green-500",
     },
     {
       title: "Corridas Finalizadas",
-      value: "3",
+      value: dadosCards.corridasHoje.toString(),
       icon: "fas fa-check-circle",
       color: "text-blue-500",
     },
     {
       title: "Média de Avaliação",
-      value: "4.8/5.0",
+      value: `${dadosCards.avaliacaoMedia}/5.0`,
       icon: "fas fa-star",
       color: "text-yellow-500",
     },
@@ -149,7 +189,7 @@ export default function DashboardEntregador() {
             </div>
           </section>
 
-          {/* 2. STATS */}
+          {/* 2. STATS DINÂMICOS */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {stats.map((stat, index) => (
               <div
@@ -194,7 +234,6 @@ export default function DashboardEntregador() {
                     </p>
                   </div>
                 </div>
-
                 <div className="space-y-2 mb-4 text-sm text-gray-600">
                   <p className="flex items-center">
                     <i className="fas fa-location-arrow text-blue-500 mr-2"></i>{" "}
@@ -205,7 +244,6 @@ export default function DashboardEntregador() {
                     {ultimoPedido.destino_endereco}
                   </p>
                 </div>
-
                 <Link
                   to="/dashboard/entregador/lista-pedidos"
                   className="w-full flex items-center justify-center py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition"
