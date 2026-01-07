@@ -11,7 +11,12 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          containerStyle={{
+            zIndex: 10000,
+          }}
+        />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>
