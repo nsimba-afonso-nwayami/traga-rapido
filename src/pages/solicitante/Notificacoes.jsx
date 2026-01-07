@@ -1,39 +1,47 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../../contexts/AuthContext"; // Importando seu contexto
 import { listarNotificacoes } from "../../services/notificacaoService";
 import SidebarSolicitante from "../../components/solicitante/SidebarSolicitante";
 import HeaderSolicitante from "../../components/solicitante/HeaderSolicitante";
 
 export default function NotificacoesSolicitante() {
+  const { user } = useAuth(); // Acessando o usuário logado
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // ESTADOS
-  const [todasNotificacoes, setTodasNotificacoes] = useState([]); // Armazena o "grosso" dos dados
-  const [limiteExibicao, setLimiteExibicao] = useState(6); // Começa exibindo 6
+  const [todasNotificacoes, setTodasNotificacoes] = useState([]);
+  const [limiteExibicao, setLimiteExibicao] = useState(6);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function carregarDados() {
-      try {
-        setLoading(true);
-        const response = await listarNotificacoes();
-        const dados = response.data.results || response.data;
+  const carregarDados = useCallback(async () => {
+    // Só prossegue se o usuário estiver carregado no contexto
+    if (!user?.id) return;
 
-        // Ordenamos tudo do mais recente para o mais antigo uma única vez
-        const ordenadas = dados.sort((a, b) => {
-          return new Date(b.criado_em) - new Date(a.criado_em);
-        });
+    try {
+      setLoading(true);
+      const response = await listarNotificacoes();
+      const dados = response.data.results || response.data;
 
-        setTodasNotificacoes(ordenadas);
-      } catch (error) {
-        console.error("Erro ao carregar notificações", error);
-      } finally {
-        setLoading(false);
-      }
+      // FILTRO: Exibe apenas notificações pertencentes ao ID do usuário logado
+      // Convertemos ambos para Number para evitar erros de comparação string vs number
+      const filtradas = dados.filter(
+        (n) => Number(n.usuario) === Number(user.id)
+      );
+
+      const ordenadas = filtradas.sort((a, b) => {
+        return new Date(b.criado_em) - new Date(a.criado_em);
+      });
+
+      setTodasNotificacoes(ordenadas);
+    } catch (error) {
+      console.error("Erro ao carregar notificações", error);
+    } finally {
+      setLoading(false);
     }
-    carregarDados();
-  }, []);
+  }, [user?.id]); // Recria a função se o ID do usuário mudar
 
-  // Aqui aplicamos o SLICE para pegar do índice 0 até o limite atual (6, 12, 18...)
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
+
   const notificacoesVisiveis = todasNotificacoes.slice(0, limiteExibicao);
 
   const carregarMais = () => {
@@ -118,36 +126,60 @@ export default function NotificacoesSolicitante() {
                     Centro de Notificações
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Exibindo {notificacoesVisiveis.length} de{" "}
-                    {todasNotificacoes.length} notificações
+                    {todasNotificacoes.length > 0
+                      ? `Exibindo ${notificacoesVisiveis.length} de ${todasNotificacoes.length} notificações`
+                      : "Nenhuma notificação encontrada"}
                   </p>
                 </div>
               </div>
 
               <div className="divide-y divide-gray-100">
-                {notificacoesVisiveis.map((n) => {
-                  const estilo = configurarEstilo(n.tipo);
-                  return (
-                    <NotificationItem
-                      key={n.id}
-                      isUnread={!n.lida}
-                      icon={estilo.icon}
-                      color={estilo.color}
-                      title={n.titulo}
-                      mensagem={n.mensagem}
-                      time={new Date(n.criado_em).toLocaleString("pt-BR")}
-                    />
-                  );
-                })}
-                {loading && (
-                  <div className="p-6 text-center text-blue-600">
-                    <i className="fas fa-spinner fa-spin"></i>
+                {loading ? (
+                  <div className="p-12 text-center text-blue-600">
+                    <i className="fas fa-spinner fa-spin text-2xl"></i>
+                    <p className="text-sm mt-2 text-gray-500 font-medium">
+                      Buscando atualizações...
+                    </p>
+                  </div>
+                ) : todasNotificacoes.length > 0 ? (
+                  notificacoesVisiveis.map((n) => {
+                    const estilo = configurarEstilo(n.tipo);
+                    return (
+                      <NotificationItem
+                        key={n.id}
+                        isUnread={!n.lida}
+                        icon={estilo.icon}
+                        color={estilo.color}
+                        title={n.titulo}
+                        mensagem={n.mensagem}
+                        time={new Date(n.criado_em).toLocaleString("pt-BR")}
+                      />
+                    );
+                  })
+                ) : (
+                  <div className="p-12 flex flex-col items-center justify-center text-center bg-white">
+                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100 shadow-sm">
+                      <i className="fas fa-bell-slash text-3xl text-gray-300"></i>
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-800">
+                      Sem notificações por aqui
+                    </h4>
+                    <p className="text-sm text-gray-500 max-w-xs mt-2 mb-6">
+                      No momento você não possui nenhum alerta vinculado à sua
+                      conta.
+                    </p>
+                    <button
+                      onClick={carregarDados}
+                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-md active:scale-95"
+                    >
+                      <i className="fas fa-sync-alt"></i>
+                      Atualizar Página
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* O botão só aparece se houver mais notificações para "fatiar" */}
-              {todasNotificacoes.length > limiteExibicao && (
+              {!loading && todasNotificacoes.length > limiteExibicao && (
                 <div className="p-4 flex justify-center border-t border-gray-100 bg-gray-50">
                   <button
                     onClick={carregarMais}
