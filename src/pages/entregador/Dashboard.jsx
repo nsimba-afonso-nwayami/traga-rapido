@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
-// Importações ESSENCIAIS para o mapa Leaflet
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+
+// Importações dos serviços
+import { listarPedidosDisponiveis } from "../../services/pedidoService";
+import { getUsuario } from "../../services/usuarioService";
 
 // --- CONFIGURAÇÃO LEAFLET ---
 delete L.Icon.Default.prototype._getIconUrl;
@@ -16,25 +19,59 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Ícone Customizado para o Entregador (Azul)
 const EntregadorIcon = new L.Icon({
   iconUrl:
     'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="%232563EB"%3E%3Cpath d="M544 192c0 8.84-7.16 16-16 16h-32c-8.84 0-16-7.16-16-16V64c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v128zm-256 0c0 8.84-7.16 16-16 16h-32c-8.84 0-16-7.16-16-16V64c0-8.84 7.16-16 16-16h32c8.84 0 16 7.16 16 16v128zm-32-96h-32c-17.67 0-32-14.33-32-32s14.33-32 32-32h32c17.67 0 32 14.33 32 32s-14.33 32-32 32zM320 0c-35.35 0-64 28.65-64 64V320c0 35.35 28.65 64 64 64h320c35.35 0 64-28.65 64-64V64c0-35.35-28.65-64-64-64H320zm-64 32c0 17.67-14.33 32-32 32H64c-17.67 0-32-14.33-32-32s14.33-32 32-32h160c17.67 0 32 14.33 32 32zM64 48c0-17.67 14.33-32 32-32h32c17.67 0 32 14.33 32 32s-14.33 32-32 32H96c-17.67 0-32-14.33-32-32zM576 448c0 35.35-28.65 64-64 64H64c-35.35 0-64-28.65-64-64V352c0-35.35 28.65-64 64-64h448c35.35 0 64 28.65 64 64v96z"%3E%3C/path%3E%3C/svg%3E',
   iconSize: [35, 35],
   iconAnchor: [17, 35],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
 });
 
 export default function DashboardEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [ultimoPedido, setUltimoPedido] = useState(null);
 
-  // Dados Mockados de Localização (Simulação de Luanda)
+  // Referência para o áudio de notificação
+  const audioNotificacao = useRef(
+    new Audio(
+      "https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
+    )
+  );
+
   const posicaoEntregador = [-8.839988, 13.289415];
   const raioAtuacaoMetros = 5000;
 
-  // Dados Mockados para o Dashboard
+  const carregarPedidoRecente = async () => {
+    try {
+      const pedidos = await listarPedidosDisponiveis();
+      if (pedidos.length > 0) {
+        const p = pedidos[0];
+
+        // Só atualiza e toca som se for um pedido novo (ID diferente)
+        if (!ultimoPedido || ultimoPedido.id !== p.id) {
+          const u = await getUsuario(p.solicitante);
+          setUltimoPedido({ ...p, usernameSolicitante: u.username });
+
+          // Toca o som se o navegador permitir (precisa de interação prévia do usuário)
+          audioNotificacao.current
+            .play()
+            .catch((e) => console.log("Áudio bloqueado pelo navegador"));
+        }
+      } else {
+        setUltimoPedido(null);
+      }
+    } catch (error) {
+      console.error("Erro no refresh:", error);
+    }
+  };
+
+  useEffect(() => {
+    carregarPedidoRecente();
+    const intervalo = setInterval(carregarPedidoRecente, 5000);
+    return () => clearInterval(intervalo);
+  }, [ultimoPedido]);
+
   const stats = [
     {
       title: "Ganhos Hoje",
@@ -60,14 +97,12 @@ export default function DashboardEntregador() {
 
   return (
     <div className="min-h-screen flex bg-gray-100 overflow-hidden">
-      {/* Sidebar */}
       <SidebarEntregador
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
 
       <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
-        {/* HEADER FIXO */}
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
@@ -75,12 +110,10 @@ export default function DashboardEntregador() {
           setIsOnline={setIsOnline}
         />
 
-        {/* ÁREA DE CONTEÚDO COM ROLAGEM PRÓPRIA */}
-        <main className="flex-1 overflow-y-auto bg-gray-100 px-4 sm:px-6 space-y-8">
-          {/* ESPAÇADOR MANUAL: Garante que o conteúdo comece DEPOIS do header fixo */}
+        <main className="flex-1 overflow-y-auto bg-gray-100 px-4 sm:px-6 space-y-8 pb-10">
           <div className="h-20 w-full shrink-0"></div>
 
-          {/* 1. CONTROLE DE STATUS ONLINE */}
+          {/* 1. STATUS */}
           <section
             className="bg-white p-6 rounded-xl shadow-lg border-t-4"
             style={{ borderColor: isOnline ? "#10B981" : "#EF4444" }}
@@ -92,21 +125,20 @@ export default function DashboardEntregador() {
                   isOnline
                     ? "bg-green-100 text-green-700"
                     : "bg-red-100 text-red-700"
-                } transition-colors duration-300`}
+                }`}
               >
                 {isOnline ? "Em Serviço" : "Descansando"}
               </span>
             </h3>
-
-            <div className="flex items-center justify-between sm:justify-start sm:gap-6">
-              <p className="text-gray-600 text-sm sm:text-base">
+            <div className="flex items-center justify-between">
+              <p className="text-gray-600">
                 {isOnline
                   ? "Você está online e pronto para receber novas corridas."
                   : "Você está offline. Mude o status para receber pedidos."}
               </p>
               <div
                 onClick={handleToggleOnline}
-                className={`w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
+                className={`w-16 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all ${
                   isOnline
                     ? "bg-green-500 justify-end"
                     : "bg-gray-300 justify-start"
@@ -117,7 +149,7 @@ export default function DashboardEntregador() {
             </div>
           </section>
 
-          {/* 2. CARTÕES DE DESEMPENHO */}
+          {/* 2. STATS */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {stats.map((stat, index) => (
               <div
@@ -139,13 +171,57 @@ export default function DashboardEntregador() {
             ))}
           </section>
 
-          {/* 3. MAPA DE ATUAÇÃO (Leaflet) */}
+          {/* 3. PEDIDO MAIS RECENTE */}
+          {ultimoPedido && (
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                <i className="fas fa-bolt mr-2 text-yellow-500 animate-bounce"></i>{" "}
+                Novo pedido disponível!
+              </h3>
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-600 p-5 sm:p-6 ring-2 ring-blue-500 ring-opacity-50">
+                <div className="flex justify-between items-start border-b pb-3 mb-4">
+                  <div>
+                    <h4 className="text-lg font-extrabold text-gray-900">
+                      {ultimoPedido.titulo}
+                    </h4>
+                    <p className="text-sm text-blue-600 font-semibold">
+                      Solicitante: {ultimoPedido.usernameSolicitante}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-green-600">
+                      AOA {ultimoPedido.valor_sugerido}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-4 text-sm text-gray-600">
+                  <p className="flex items-center">
+                    <i className="fas fa-location-arrow text-blue-500 mr-2"></i>{" "}
+                    {ultimoPedido.origem_endereco}
+                  </p>
+                  <p className="flex items-center">
+                    <i className="fas fa-flag-checkered text-red-500 mr-2"></i>{" "}
+                    {ultimoPedido.destino_endereco}
+                  </p>
+                </div>
+
+                <Link
+                  to="/dashboard/entregador/lista-pedidos"
+                  className="w-full flex items-center justify-center py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition"
+                >
+                  Ver Detalhes e Aceitar
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {/* 4. MAPA */}
           <section className="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200">
             <h3 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
               <i className="fas fa-map-marked-alt mr-2 text-blue-500"></i> Sua
               Área de Atuação
             </h3>
-
             <div className="h-[450px] w-full rounded-lg overflow-hidden relative border border-gray-100 z-0">
               {!isOnline && (
                 <div className="absolute inset-0 z-1000 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm p-4 text-center">
@@ -153,19 +229,14 @@ export default function DashboardEntregador() {
                   <p className="text-xl font-bold text-white">
                     Mapa Desativado
                   </p>
-                  <p className="text-sm text-gray-200 mt-1 text-center">
-                    Fique online para que possamos rastrear sua posição e enviar
-                    pedidos.
-                  </p>
                   <button
                     onClick={handleToggleOnline}
-                    className="mt-4 px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
+                    className="mt-4 px-6 py-2 bg-green-500 text-white font-semibold rounded-lg"
                   >
                     Ficar Online Agora
                   </button>
                 </div>
               )}
-
               <MapContainer
                 center={posicaoEntregador}
                 zoom={13}
@@ -185,20 +256,10 @@ export default function DashboardEntregador() {
                     weight: 2,
                   }}
                 />
-                {isOnline && (
-                  <Marker position={[-8.83, 13.295]}>
-                    <Popup>
-                      <strong>Nova Corrida Próxima!</strong>
-                      <br />
-                      AOA 1.800 | 1.5 km
-                    </Popup>
-                  </Marker>
-                )}
               </MapContainer>
             </div>
           </section>
 
-          {/* ESPAÇADOR INFERIOR (Opcional, para respiro) */}
           <div className="h-10 w-full shrink-0"></div>
         </main>
       </div>
