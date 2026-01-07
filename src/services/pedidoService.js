@@ -36,6 +36,16 @@ export async function listarPedidosDisponiveis() {
   });
 }
 
+export async function listarHistoricoEntregador() {
+  const response = await listarPedidos();
+  const logadoId = localStorage.getItem("userId");
+
+  return response.data.filter(pedido => 
+    String(pedido.entregador) === String(logadoId) && 
+    (pedido.status === "ENTREGUE" || pedido.status === "CANCELADO")
+  ).sort((a, b) => b.id - a.id); // Mais recentes primeiro
+}
+
 export async function obterPedidoPorId(id) {
   const response = await api.get(`/pedidos/${id}/`);
   return response.data;
