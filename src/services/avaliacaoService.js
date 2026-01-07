@@ -5,7 +5,7 @@ export const criarAvaliacao = async (dadosAvaliacao) => {
     const payload = {
       estrelas: Number(dadosAvaliacao.estrelas),
       comentario: dadosAvaliacao.comentario || "",
-      pedido: dadosAvaliacao.pedido // REMOVIDO O Number() AQUI
+      pedido: dadosAvaliacao.pedido
     };
 
     console.log("Payload enviado para API:", payload);
