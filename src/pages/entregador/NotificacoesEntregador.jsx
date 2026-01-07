@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { listarNotificacoes } from "../../services/notificacaoService";
 import { toast } from "react-hot-toast";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
@@ -8,18 +8,18 @@ export default function NotificacoesEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificacoes, setNotificacoes] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Lógica de Expansão
-  const [isExpanded, setIsExpanded] = useState(false);
-  const topoListaRef = useRef(null);
+  const [limiteExibicao, setLimiteExibicao] = useState(6);
 
   useEffect(() => {
     async function carregarNotificacoes() {
       try {
+        setLoading(true);
         const response = await listarNotificacoes();
-        // Inverte a array para mostrar da última (mais recente) para a primeira
-        const listaInvertida = [...response.data].reverse();
-        setNotificacoes(listaInvertida);
+        // Ordenação: Mais recente primeiro
+        const listaOrdenada = [...response.data].sort((a, b) => {
+          return new Date(b.criado_em) - new Date(a.criado_em);
+        });
+        setNotificacoes(listaOrdenada);
       } catch (error) {
         console.error("Erro ao carregar notificações:", error);
         toast.error("Erro ao carregar notificações");
@@ -27,39 +27,73 @@ export default function NotificacoesEntregador() {
         setLoading(false);
       }
     }
-
     carregarNotificacoes();
   }, []);
 
-  const marcarComoLida = (id) => {
-    setNotificacoes((notifs) =>
-      notifs.map((n) => (n.id === id ? { ...n, lida: true } : n))
-    );
-  };
-
-  const limparTodas = () => {
-    if (
-      window.confirm("Tem certeza que deseja limpar todas as notificações?")
-    ) {
-      setNotificacoes([]);
+  const configurarEstilo = (tipo) => {
+    switch (tipo) {
+      case "SUCESSO":
+        return { icon: "check-circle", color: "bg-green-600" };
+      case "ALERTA":
+        return { icon: "exclamation-triangle", color: "bg-yellow-600" };
+      case "ERRO":
+        return { icon: "times-circle", color: "bg-red-600" };
+      default:
+        return { icon: "bell", color: "bg-blue-600" };
     }
   };
 
-  function handleToggleVerMais() {
-    if (isExpanded) {
-      setIsExpanded(false);
-      topoListaRef.current?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      setIsExpanded(true);
-    }
-  }
+  const notificacoesVisiveis = notificacoes.slice(0, limiteExibicao);
 
-  const notificacoesNaoLidas = notificacoes.filter((n) => !n.lida).length;
+  const carregarMais = () => {
+    setLimiteExibicao((prev) => prev + 6);
+  };
 
-  // Limite de 6 registros iniciais
-  const registrosParaExibir = isExpanded
-    ? notificacoes
-    : notificacoes.slice(0, 6);
+  const NotificationItem = ({
+    isUnread,
+    icon,
+    color,
+    title,
+    time,
+    mensagem,
+  }) => (
+    <div
+      className={`p-4 border-b border-gray-200 flex items-start gap-4 transition duration-150 ${
+        isUnread
+          ? "bg-blue-50/70 hover:bg-blue-100/70"
+          : "bg-white hover:bg-gray-50"
+      }`}
+    >
+      <div
+        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${color} shadow-sm`}
+      >
+        <i className={`fas fa-${icon} text-white text-sm`}></i>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p
+          className={`font-semibold truncate ${
+            isUnread ? "text-gray-900" : "text-gray-700"
+          }`}
+        >
+          {title}
+        </p>
+        <p className="text-sm text-gray-600 mt-0.5">{mensagem}</p>
+        <p className="text-xs text-gray-500 mt-1 flex items-center">
+          <i className="far fa-clock mr-1"></i> {time}
+        </p>
+      </div>
+
+      <div className="flex flex-col items-center shrink-0 gap-2">
+        {isUnread && (
+          <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+        )}
+        <button className="text-gray-400 hover:text-blue-600 transition duration-150 p-1">
+          <i className="far fa-circle-check text-lg"></i>
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex bg-gray-100 overflow-hidden">
@@ -68,134 +102,69 @@ export default function NotificacoesEntregador() {
         setSidebarOpen={setSidebarOpen}
       />
 
-      <div className="flex-1 flex flex-col md:ml-64 h-screen relative overflow-hidden">
+      <div className="flex-1 flex flex-col md:ml-64 h-screen relative">
         <HeaderEntregador
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* Âncora para o scroll e espaçador */}
-          <div
-            ref={topoListaRef}
-            className="h-16 w-full shrink-0 md:h-20"
-          ></div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100">
+          <div className="h-20 w-full shrink-0"></div>
 
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Ações e Contagem */}
-            <div className="flex justify-between items-center flex-wrap gap-3">
-              <h3 className="text-xl font-bold text-gray-800">
-                Você tem{" "}
-                <span className="text-blue-600">{notificacoesNaoLidas}</span>{" "}
-                {notificacoesNaoLidas === 1 ? "alerta" : "alertas"} não lidos.
-              </h3>
-
-              <button
-                onClick={limparTodas}
-                className="px-4 py-2 text-sm bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors duration-150 flex items-center disabled:opacity-50"
-                disabled={notificacoes.length === 0}
-              >
-                <i className="fas fa-trash-alt mr-2"></i> Limpar Todas
-              </button>
-            </div>
-
-            {loading && (
-              <div className="text-center py-10 text-gray-500">
-                Carregando notificações...
+          <div className="max-w-3xl mx-auto mb-10">
+            <div className="bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Centro de Notificações
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Acompanhe seus alertas e atualizações
+                  </p>
+                </div>
               </div>
-            )}
 
-            {!loading && (
-              <div className="space-y-3">
-                {registrosParaExibir.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className={`p-4 rounded-xl shadow-md border-l-4 transition-all duration-200 
-                      ${
-                        notif.lida
-                          ? "bg-white border-gray-200"
-                          : "bg-white border-blue-500 hover:shadow-lg cursor-pointer"
-                      }
-                    `}
-                    onClick={() => !notif.lida && marcarComoLida(notif.id)}
+              <div className="divide-y divide-gray-100">
+                {loading ? (
+                  <div className="p-10 text-center text-blue-600">
+                    <i className="fas fa-spinner fa-spin text-2xl"></i>
+                  </div>
+                ) : notificacoes.length === 0 ? (
+                  <div className="p-10 text-center text-gray-500">
+                    <i className="fas fa-bell-slash text-4xl mb-3 block opacity-20"></i>
+                    Nenhuma notificação por aqui.
+                  </div>
+                ) : (
+                  notificacoesVisiveis.map((n) => {
+                    const estilo = configurarEstilo(n.tipo);
+                    return (
+                      <NotificationItem
+                        key={n.id}
+                        isUnread={!n.lida}
+                        icon={estilo.icon}
+                        color={estilo.color}
+                        title={n.titulo}
+                        mensagem={n.mensagem}
+                        time={new Date(n.criado_em).toLocaleString("pt-BR")}
+                      />
+                    );
+                  })
+                )}
+              </div>
+
+              {!loading && notificacoes.length > limiteExibicao && (
+                <div className="p-4 flex justify-center border-t border-gray-100 bg-gray-50">
+                  <button
+                    onClick={carregarMais}
+                    className="text-sm text-gray-500 hover:text-blue-600 font-bold py-2 px-4 transition duration-150 flex items-center gap-2"
                   >
-                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
-                      <div className="flex items-start">
-                        <div className="p-2 rounded-full mr-3 bg-blue-100 text-blue-700 shrink-0">
-                          <i className="fas fa-bell text-lg"></i>
-                        </div>
-
-                        <div>
-                          <p
-                            className={`text-base font-bold leading-tight ${
-                              notif.lida ? "text-gray-700" : "text-blue-800"
-                            }`}
-                          >
-                            {notif.titulo}
-                          </p>
-
-                          <p
-                            className={`text-sm mt-1 ${
-                              notif.lida ? "text-gray-500" : "text-gray-600"
-                            }`}
-                          >
-                            {notif.mensagem}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="text-left sm:text-right ml-0 sm:ml-4 w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0">
-                        <p className="text-xs text-gray-400 whitespace-nowrap">
-                          {new Date(notif.criado_em).toLocaleString("pt-PT")}
-                        </p>
-
-                        {!notif.lida && (
-                          <span className="inline-block text-xs font-semibold text-blue-500 mt-1">
-                            Novo
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {notificacoes.length === 0 && (
-                  <div className="bg-white p-10 rounded-xl text-center shadow-lg mt-6">
-                    <i className="fas fa-bell-slash text-6xl text-gray-300 mb-4"></i>
-                    <p className="text-xl font-semibold text-gray-700">
-                      Nenhuma notificação.
-                    </p>
-                    <p className="text-gray-500 mt-2">
-                      Está tudo tranquilo por aqui.
-                    </p>
-                  </div>
-                )}
-
-                {/* BOTÃO DINÂMICO VER MAIS / VER MENOS */}
-                {!loading && notificacoes.length > 6 && (
-                  <div className="pt-4">
-                    <button
-                      className={`w-full py-4 border-2 border-dashed font-bold rounded-xl transition-all flex items-center justify-center gap-2 
-                        ${
-                          isExpanded
-                            ? "bg-red-50 border-red-200 text-red-500 hover:bg-red-100"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-500"
-                        }`}
-                      onClick={handleToggleVerMais}
-                    >
-                      <i
-                        className={`fas ${
-                          isExpanded ? "fa-minus-circle" : "fa-plus-circle"
-                        }`}
-                      ></i>
-                      {isExpanded ? "MOSTRAR MENOS" : "VER MAIS NOTIFICAÇÕES"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                    <i className="fas fa-history text-xs"></i>
+                    Ver notificações mais antigas
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="h-10 w-full"></div>
         </main>
       </div>
     </div>
