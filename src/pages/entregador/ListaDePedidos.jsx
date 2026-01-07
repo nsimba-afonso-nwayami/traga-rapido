@@ -102,80 +102,91 @@ export default function ListaDePedidos() {
     }
   }, []);
 
-  useEffect(() => {
-    async function carregarDados() {
-      setLoading(true);
+  // Lógica de carregamento centralizada
+  const carregarDados = useCallback(
+    async (isFirstLoad = false) => {
+      if (isFirstLoad) setLoading(true);
       try {
         const disponiveis = await listarPedidosDisponiveis();
-
-        // Procura se entre os pedidos retornados existe um que já está vinculado a você
         const logadoId = localStorage.getItem("userId");
+
         const emProgresso = disponiveis.find(
           (p) =>
             String(p.entregador) === String(logadoId) && p.status !== "ENTREGUE"
         );
 
         if (emProgresso) {
-          const u = await getUsuario(emProgresso.solicitante);
-          const completo = {
-            ...emProgresso,
-            usernameSolicitante: u.username,
-            telefoneSolicitante: u.telefone,
-          };
-          setPedidoAtivo(completo);
-
+          // Só busca usuário se o pedido ativo mudou ou é novo
           if (
-            completo.origem_latitude != null &&
-            completo.destino_latitude != null
+            !pedidoAtivo ||
+            pedidoAtivo.id !== emProgresso.id ||
+            pedidoAtivo.status !== emProgresso.status
           ) {
-            calcularRota(
-              completo.origem_latitude,
-              completo.origem_longitude,
-              completo.destino_latitude,
-              completo.destino_longitude
-            );
-          }
-        } else if (disponiveis.length > 0) {
-          const p = disponiveis[0];
-          try {
-            const u = await getUsuario(p.solicitante);
-            setPedidos([
-              {
-                ...p,
-                usernameSolicitante: u.username,
-                telefoneSolicitante: u.telefone,
-              },
-            ]);
-          } catch {
-            setPedidos([p]);
+            const u = await getUsuario(emProgresso.solicitante);
+            const completo = {
+              ...emProgresso,
+              usernameSolicitante: u.username,
+              telefoneSolicitante: u.telefone,
+            };
+            setPedidoAtivo(completo);
+            if (
+              completo.origem_latitude != null &&
+              completo.destino_latitude != null
+            ) {
+              calcularRota(
+                completo.origem_latitude,
+                completo.origem_longitude,
+                completo.destino_latitude,
+                completo.destino_longitude
+              );
+            }
           }
         } else {
-          setPedidos([]);
+          setPedidoAtivo(null);
+          if (disponiveis.length > 0) {
+            const p = disponiveis[0];
+            // Se o primeiro da lista mudou, atualiza
+            if (pedidos.length === 0 || pedidos[0].id !== p.id) {
+              try {
+                const u = await getUsuario(p.solicitante);
+                setPedidos([
+                  {
+                    ...p,
+                    usernameSolicitante: u.username,
+                    telefoneSolicitante: u.telefone,
+                  },
+                ]);
+              } catch {
+                setPedidos([p]);
+              }
+            }
+          } else {
+            setPedidos([]);
+          }
         }
       } catch (error) {
-        toast.error("Erro ao carregar dados.");
+        if (isFirstLoad) toast.error("Erro ao carregar dados.");
       } finally {
-        setLoading(false);
+        if (isFirstLoad) setLoading(false);
       }
-    }
-    carregarDados();
-  }, [calcularRota]);
+    },
+    [pedidoAtivo, pedidos, calcularRota]
+  );
+
+  // Efeito de Refresh Automático (5 segundos)
+  useEffect(() => {
+    carregarDados(true); // Carga inicial
+    const interval = setInterval(() => carregarDados(false), 5000);
+    return () => clearInterval(interval);
+  }, [carregarDados]);
 
   async function handleAceitar(pedido) {
     setAceitandoId(pedido.id);
     try {
       await aceitarPedido(pedido.id);
       toast.success("Corrida iniciada!");
-      setPedidoAtivo({ ...pedido, status: "PROPOSTA_ACEITA" });
-
-      if (pedido.origem_latitude != null && pedido.destino_latitude != null) {
-        calcularRota(
-          pedido.origem_latitude,
-          pedido.origem_longitude,
-          pedido.destino_latitude,
-          pedido.destino_longitude
-        );
-      }
+      // Atualiza imediatamente após aceitar
+      carregarDados(false);
     } catch (error) {
       toast.error("Erro ao aceitar.");
     } finally {
@@ -193,9 +204,7 @@ export default function ListaDePedidos() {
       if (config.proximo === "ENTREGUE") {
         setPedidoAtivo(null);
         setRotaCaminho([]);
-        // Após finalizar, recarrega a lista para ver se há novos pedidos
-        const disponiveis = await listarPedidosDisponiveis();
-        setPedidos(disponiveis);
+        carregarDados(true);
       } else {
         setPedidoAtivo({ ...pedidoAtivo, status: config.proximo });
       }
@@ -394,7 +403,6 @@ export default function ListaDePedidos() {
                 </div>
               </div>
             ) : (
-              // EXIBE O CARD ABAIXO APENAS QUANDO NÃO HÁ PEDIDO PARA MOSTRAR E JÁ PAROU DE CARREGAR
               !loading && (
                 <div className="bg-white rounded-xl shadow-lg p-10 text-center border border-gray-200">
                   <p className="text-gray-600 text-lg">
