@@ -15,6 +15,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { obterPedidoPorId, cancelarPedido } from "../../services/pedidoService";
 import { getUsuario } from "../../services/usuarioService";
+import { criarAvaliacao } from "../../services/avaliacaoService";
 
 const customIcon = new L.Icon({
   iconUrl:
@@ -43,20 +44,24 @@ export default function DetalhesDoPedido() {
   const [entregadorInfo, setEntregadorInfo] = useState(null);
   const [rotaCaminho, setRotaCaminho] = useState([]);
 
-  // Função para carregar os dados
+  // Estados para Avaliação
+  const [showAvaliacaoForm, setShowAvaliacaoForm] = useState(false);
+  const [estrelas, setEstrelas] = useState(5);
+  const [comentario, setComentario] = useState("");
+  const [enviandoAvaliacao, setEnviandoAvaliacao] = useState(false);
+
   const carregarPedido = useCallback(
     async (isAutoRefresh = false) => {
+      if (isAutoRefresh && showAvaliacaoForm) return;
+
       try {
         const data = await obterPedidoPorId(id);
-
-        // Se for uma atualização automática, mostra o toast
-        if (isAutoRefresh) {
-          toast.success("Status atualizado", { id: "refresh-toast" }); // 'id' evita duplicar toasts se clicar rápido
+        if (isAutoRefresh && data.status !== pedido?.status) {
+          toast.success("Status atualizado", { id: "refresh-toast" });
         }
-
         setPedido(data);
 
-        if (data.entregador) {
+        if (data.entregador && !entregadorInfo) {
           try {
             const user = await getUsuario(data.entregador);
             setEntregadorInfo(user);
@@ -65,7 +70,11 @@ export default function DetalhesDoPedido() {
           }
         }
 
-        if (data.origem_latitude && data.destino_latitude) {
+        if (
+          data.origem_latitude &&
+          data.destino_latitude &&
+          rotaCaminho.length === 0
+        ) {
           calcularRota(
             data.origem_latitude,
             data.origem_longitude,
@@ -75,20 +84,16 @@ export default function DetalhesDoPedido() {
         }
       } catch (err) {
         if (!isAutoRefresh) toast.error("Erro ao carregar pedido");
-        console.error(err);
       }
     },
-    [id]
+    [id, showAvaliacaoForm, pedido?.status, entregadorInfo, rotaCaminho.length]
   );
 
-  // Configuração do Intervalo de 10 segundos
   useEffect(() => {
-    carregarPedido(false); // Carregamento inicial (sem toast)
-
+    carregarPedido(false);
     const interval = setInterval(() => {
-      carregarPedido(true); // Atualização automática (com toast)
+      carregarPedido(true);
     }, 10000);
-
     return () => clearInterval(interval);
   }, [carregarPedido]);
 
@@ -121,6 +126,31 @@ export default function DetalhesDoPedido() {
     }
   };
 
+  const handleEnviarAvaliacao = async (e) => {
+    e.preventDefault();
+    setEnviandoAvaliacao(true);
+    try {
+      await criarAvaliacao({
+        estrelas: estrelas,
+        comentario: comentario,
+        pedido: Number(id), // Garantindo que é número
+      });
+      toast.success("Avaliação enviada com sucesso!");
+      setShowAvaliacaoForm(false);
+      setComentario(""); // Limpa o campo
+      carregarPedido(false);
+    } catch (error) {
+        // Captura o erro específico da API para o campo pedido
+        const apiData = error.response?.data;
+        const msg = apiData?.pedido ? `Pedido: ${apiData.pedido[0]}` : 
+                    apiData?.detail ? apiData.detail : "Erro ao enviar avaliação";
+        toast.error(msg);
+        console.error("Erro retornado pela API:", apiData);
+    } finally {
+      setEnviandoAvaliacao(false);
+    }
+  };
+
   const DetalheItem = ({ label, value, icon, children }) => (
     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
       <i className={`fas fa-${icon} text-blue-600 text-lg shrink-0`}></i>
@@ -137,7 +167,12 @@ export default function DetalhesDoPedido() {
     </div>
   );
 
-  if (!pedido) return <p className="text-center mt-10">Carregando...</p>;
+  if (!pedido)
+    return (
+      <p className="text-center mt-10 font-bold text-gray-500">
+        Carregando detalhes...
+      </p>
+    );
 
   return (
     <div className="min-h-screen flex bg-gray-100 overflow-hidden">
@@ -156,6 +191,7 @@ export default function DetalhesDoPedido() {
           <div className="h-20 w-full shrink-0"></div>
 
           <div className="max-w-6xl mx-auto space-y-6 pb-10">
+            {/* CARD SUPERIOR */}
             <div className="bg-white p-6 rounded-xl shadow border border-gray-300 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">
@@ -172,15 +208,33 @@ export default function DetalhesDoPedido() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <span className="px-4 py-1.5 text-sm font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                <span
+                  className={`px-4 py-1.5 text-sm font-bold rounded-full border ${
+                    pedido.status === "ENTREGUE"
+                      ? "bg-green-100 text-green-800 border-green-200"
+                      : "bg-blue-100 text-blue-800 border-blue-200"
+                  }`}
+                >
                   Status: {pedido.status}
                 </span>
-                <button
-                  onClick={handleCancelarPedido}
-                  className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg text-sm hover:bg-red-700 transition flex items-center shadow-md shadow-red-100 cursor-pointer"
-                >
-                  <i className="fas fa-ban mr-2"></i> Cancelar Pedido
-                </button>
+
+                {pedido.status === "ENTREGUE" ? (
+                  <button
+                    onClick={() => setShowAvaliacaoForm(true)}
+                    className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg text-sm hover:bg-blue-700 transition flex items-center shadow-md cursor-pointer"
+                  >
+                    <i className="fas fa-star mr-2"></i> Avaliar Serviço
+                  </button>
+                ) : (
+                  pedido.status !== "CANCELADO" && (
+                    <button
+                      onClick={handleCancelarPedido}
+                      className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg text-sm hover:bg-red-700 transition flex items-center shadow-md cursor-pointer"
+                    >
+                      <i className="fas fa-ban mr-2"></i> Cancelar Pedido
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
@@ -331,6 +385,80 @@ export default function DetalhesDoPedido() {
           </div>
         </main>
       </div>
+
+      {/* MODAL DE AVALIAÇÃO - PALETA AZUL */}
+      {showAvaliacaoForm && (
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
+              <h3 className="font-bold text-lg">Avaliar Serviço</h3>
+              <button
+                onClick={() => setShowAvaliacaoForm(false)}
+                className="hover:scale-110 transition-transform cursor-pointer"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleEnviarAvaliacao} className="p-6 space-y-5">
+              <div className="text-center">
+                <p className="text-gray-600 mb-3 text-sm">
+                  Sua nota para{" "}
+                  <strong className="text-blue-600">{entregadorInfo?.username || "o entregador"}</strong>:
+                </p>
+                <div className="flex justify-center space-x-3">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setEstrelas(num)}
+                      className="text-4xl focus:outline-none transition-all hover:scale-110 cursor-pointer"
+                    >
+                      <i
+                        className={`${
+                          estrelas >= num
+                            ? "fas text-blue-600"
+                            : "far text-gray-300"
+                        } fa-star`}
+                      ></i>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Seu comentário
+                </label>
+                <textarea
+                  required
+                  className="w-full resize-none p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none min-h-[100px] text-sm"
+                  placeholder="Ex: Entrega rápida e produto bem cuidado."
+                  value={comentario}
+                  onChange={(e) => setComentario(e.target.value)}
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAvaliacaoForm(false)}
+                  className="flex-1 py-3 border border-gray-300 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition cursor-pointer text-sm"
+                >
+                  FECHAR
+                </button>
+                <button
+                  type="submit"
+                  disabled={enviandoAvaliacao}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer text-sm"
+                >
+                  {enviandoAvaliacao ? "ENVIANDO..." : "AVALIAR AGORA"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
