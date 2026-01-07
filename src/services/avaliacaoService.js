@@ -20,6 +20,16 @@ export const criarAvaliacao = async (dadosAvaliacao) => {
   }
 };
 
+export const listarAvaliacoes = async () => {
+  try {
+    const response = await api.get("avaliacoes/");
+    return response.data; 
+  } catch (error) {
+    console.error("Erro ao listar avaliações:", error);
+    return [];
+  }
+};
+
 export const obterAvaliacaoPorPedido = async (pedidoId) => {
   try {
     const response = await api.get(`avaliacoes/?pedido=${pedidoId}`);
