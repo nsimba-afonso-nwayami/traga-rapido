@@ -128,24 +128,39 @@ export default function DetalhesDoPedido() {
 
   const handleEnviarAvaliacao = async (e) => {
     e.preventDefault();
+
+    // CORREÇÃO: Usamos o ID como string (UUID), sem Number()
+    const pedidoIdParaEnviar = id || pedido?.id;
+
+    if (!pedidoIdParaEnviar) {
+      toast.error("ID do pedido não localizado.");
+      return;
+    }
+
     setEnviandoAvaliacao(true);
     try {
       await criarAvaliacao({
         estrelas: estrelas,
         comentario: comentario,
-        pedido: Number(id), // Garantindo que é número
+        pedido: pedidoIdParaEnviar, // Enviando como UUID (String)
       });
       toast.success("Avaliação enviada com sucesso!");
       setShowAvaliacaoForm(false);
-      setComentario(""); // Limpa o campo
+      setComentario("");
       carregarPedido(false);
     } catch (error) {
-        // Captura o erro específico da API para o campo pedido
-        const apiData = error.response?.data;
-        const msg = apiData?.pedido ? `Pedido: ${apiData.pedido[0]}` : 
-                    apiData?.detail ? apiData.detail : "Erro ao enviar avaliação";
-        toast.error(msg);
-        console.error("Erro retornado pela API:", apiData);
+      const apiData = error.response?.data;
+      let erroMsg = "Erro ao enviar avaliação";
+
+      // Verifica se a API retornou erro específico no campo pedido
+      if (apiData?.pedido) {
+        erroMsg = `Pedido: ${apiData.pedido[0]}`;
+      } else if (apiData?.detail) {
+        erroMsg = apiData.detail;
+      }
+
+      toast.error(erroMsg);
+      console.error("Erro detalhado da API:", apiData);
     } finally {
       setEnviandoAvaliacao(false);
     }
@@ -197,7 +212,7 @@ export default function DetalhesDoPedido() {
                 <h1 className="text-2xl font-bold text-gray-800">
                   {pedido.titulo}{" "}
                   <span className="text-blue-600 font-mono text-lg">
-                    #{pedido.id}
+                    #{pedido.id.toString().substring(0, 8)}...
                   </span>
                 </h1>
                 <p className="mt-1 text-sm text-gray-500 flex items-center">
@@ -386,9 +401,9 @@ export default function DetalhesDoPedido() {
         </main>
       </div>
 
-      {/* MODAL DE AVALIAÇÃO - PALETA AZUL */}
+      {/* MODAL DE AVALIAÇÃO - AZUL - Z-INDEX 50 PARA NÃO COBRIR O TOAST */}
       {showAvaliacaoForm && (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
               <h3 className="font-bold text-lg">Avaliar Serviço</h3>
@@ -404,7 +419,10 @@ export default function DetalhesDoPedido() {
               <div className="text-center">
                 <p className="text-gray-600 mb-3 text-sm">
                   Sua nota para{" "}
-                  <strong className="text-blue-600">{entregadorInfo?.username || "o entregador"}</strong>:
+                  <strong className="text-blue-600">
+                    {entregadorInfo?.username || "o entregador"}
+                  </strong>
+                  :
                 </p>
                 <div className="flex justify-center space-x-3">
                   {[1, 2, 3, 4, 5].map((num) => (
@@ -432,7 +450,7 @@ export default function DetalhesDoPedido() {
                 </label>
                 <textarea
                   required
-                  className="w-full resize-none p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none min-h-[100px] text-sm"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none min-h-[100px] text-sm text-gray-700"
                   placeholder="Ex: Entrega rápida e produto bem cuidado."
                   value={comentario}
                   onChange={(e) => setComentario(e.target.value)}
