@@ -22,7 +22,7 @@ import EditarPedido from "../pages/solicitante/EditarPedido";
 import DetalhesDoPedido from "../pages/solicitante/DetalhesDoPedido";
 import HistoricoPedidos from "../pages/solicitante/Historico";
 import Configuracoes from "../pages/solicitante/Configuracoes";
-import NotificacoesSolicitante from "../pages/solicitante/Notificacoes";
+import NotificacoesSolicitante from "../pages/solicitante/NotificacoesSolicitante";
 import NotFoundSolicitante from "../pages/solicitante/NotFoundSolicitante";
 
 // Entregador
