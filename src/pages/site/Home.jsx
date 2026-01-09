@@ -219,7 +219,7 @@ export default function Home() {
               rápidas e seguras.
             </p>
             <a
-              href="/auth/register"
+              href="/auth/login"
               className="mt-8 bg-blue-700 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-900 transition"
             >
               Quero Me Cadastrar
