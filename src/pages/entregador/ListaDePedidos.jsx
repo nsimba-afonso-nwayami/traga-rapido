@@ -6,7 +6,6 @@ import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup,
   Polyline,
   useMap,
 } from "react-leaflet";
@@ -22,6 +21,7 @@ import {
 } from "../../services/pedidoService";
 import { getUsuario } from "../../services/usuarioService";
 
+// --- CONFIGURAÇÃO DE ÍCONES ---
 const iconOrigem = new L.Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
@@ -45,11 +45,12 @@ const iconDestino = new L.Icon({
 });
 
 const deliveryIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/71/71422.png",
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/71/71422.png", // Ícone de Moto
   iconSize: [35, 35],
   iconAnchor: [17, 17],
 });
 
+// Componente para ajustar o zoom automaticamente entre os 3 pontos
 function FitRoute({ positions }) {
   const map = useMap();
   useEffect(() => {
@@ -57,7 +58,7 @@ function FitRoute({ positions }) {
       positions?.filter((p) => p && p[0] != null && p[1] != null) || [];
     if (validPositions.length > 1) {
       const bounds = L.latLngBounds(validPositions);
-      map.fitBounds(bounds, { padding: [50, 50] });
+      map.fitBounds(bounds, { padding: [50, 50], animate: true });
     }
   }, [positions, map]);
   return null;
@@ -104,12 +105,13 @@ export default function ListaDePedidos() {
   const [minhaPosicao, setMinhaPosicao] = useState(null);
   const [metricas, setMetricas] = useState({ distancia: "", tempo: "" });
 
+  // Monitoramento do GPS em tempo real
   useEffect(() => {
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
       (pos) => setMinhaPosicao([pos.coords.latitude, pos.coords.longitude]),
-      (err) => console.error(err),
-      { enableHighAccuracy: true }
+      (err) => console.error("Erro GPS:", err),
+      { enableHighAccuracy: true, maximumAge: 1000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
@@ -157,6 +159,7 @@ export default function ListaDePedidos() {
           }
         } else {
           setPedidoAtivo(null);
+          setRotaCaminho([]);
           const abertos = disponiveis.filter((p) => !p.entregador);
           setPedidos(abertos.length > 0 ? [abertos[0]] : []);
         }
@@ -171,52 +174,47 @@ export default function ListaDePedidos() {
 
   useEffect(() => {
     carregarDados(true);
-    const interval = setInterval(() => {
-      if (pedidoAtivo || pedidos.length > 0) {
-        carregarDados(false);
-      } else {
-        clearInterval(interval);
-      }
-    }, 5000);
+    const interval = setInterval(() => carregarDados(false), 5000);
     return () => clearInterval(interval);
-  }, [carregarDados, pedidoAtivo, pedidos.length]);
+  }, [carregarDados]);
 
-  const calcularRotaCompleta = useCallback(
-    async (latE, lonE, latO, lonO, latD, lonD) => {
-      if (!latE || !latO || !latD) return;
-      try {
-        const pontos = `${lonE},${latE};${lonO},${latO};${lonD},${latD}`;
-        const resp = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${pontos}?overview=full&geometries=geojson`
-        );
-        const data = await resp.json();
-        if (data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          setRotaCaminho(route.geometry.coordinates.map((p) => [p[1], p[0]]));
-          setMetricas({
-            distancia: `${(route.distance / 1000).toFixed(1)} km`,
-            tempo: `${Math.round(route.duration / 60)} min`,
-          });
-        }
-      } catch (err) {
-        console.error(err);
+  // Cálculo de rota dinâmica (sempre da posição atual até o próximo ponto)
+  const calcularRotaDinamica = useCallback(async (latI, lonI, latF, lonF) => {
+    if (!latI || !latF) return;
+    try {
+      const resp = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${lonI},${latI};${lonF},${latF}?overview=full&geometries=geojson`
+      );
+      const data = await resp.json();
+      if (data.routes?.length > 0) {
+        const route = data.routes[0];
+        setRotaCaminho(route.geometry.coordinates.map((p) => [p[1], p[0]]));
+        setMetricas({
+          distancia: `${(route.distance / 1000).toFixed(1)} km`,
+          tempo: `${Math.round(route.duration / 60)} min`,
+        });
       }
-    },
-    []
-  );
+    } catch (err) {
+      console.error("Erro na rota:", err);
+    }
+  }, []);
 
   useEffect(() => {
     if (pedidoAtivo && minhaPosicao) {
-      calcularRotaCompleta(
-        minhaPosicao[0],
-        minhaPosicao[1],
-        pedidoAtivo.origem_latitude,
-        pedidoAtivo.origem_longitude,
-        pedidoAtivo.destino_latitude,
-        pedidoAtivo.destino_longitude
-      );
+      const status = pedidoAtivo.status;
+      // Se já retirou o item, a meta é o destino. Caso contrário, a meta é a origem.
+      const metaLat =
+        status === "ITEM_RETIRADO" || status === "EM_ENTREGA"
+          ? pedidoAtivo.destino_latitude
+          : pedidoAtivo.origem_latitude;
+      const metaLon =
+        status === "ITEM_RETIRADO" || status === "EM_ENTREGA"
+          ? pedidoAtivo.destino_longitude
+          : pedidoAtivo.origem_longitude;
+
+      calcularRotaDinamica(minhaPosicao[0], minhaPosicao[1], metaLat, metaLon);
     }
-  }, [minhaPosicao, pedidoAtivo, calcularRotaCompleta]);
+  }, [minhaPosicao, pedidoAtivo?.status, calcularRotaDinamica]);
 
   async function handleAceitar(pedido) {
     setAceitandoId(pedido.id);
@@ -240,7 +238,6 @@ export default function ListaDePedidos() {
       if (config.proximo === "ENTREGUE") {
         setPedidoAtivo(null);
         setRotaCaminho([]);
-        setMetricas({ distancia: "", tempo: "" });
         carregarDados(true);
       } else {
         setPedidoAtivo({ ...pedidoAtivo, status: config.proximo });
@@ -269,8 +266,9 @@ export default function ListaDePedidos() {
 
           <div className="max-w-4xl mx-auto pb-10">
             {pedidoParaMostrar ? (
-              <div className="bg-white rounded-xl shadow-lg transition-shadow duration-300 overflow-hidden border-l-4 border-blue-600">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-blue-600">
                 <div className="p-5 sm:p-6 space-y-4">
+                  {/* Cabeçalho do Card */}
                   <div className="flex justify-between items-start border-b pb-3 mb-3">
                     <div>
                       <h4 className="text-xl font-extrabold text-gray-900">
@@ -319,11 +317,12 @@ export default function ListaDePedidos() {
                     </div>
                   </div>
 
+                  {/* Métricas Dinâmicas */}
                   {pedidoAtivo && metricas.distancia && (
                     <div className="flex gap-4 mb-2">
                       <div className="bg-blue-50 p-2 rounded-lg flex-1 text-center border border-blue-100">
                         <p className="text-xs text-blue-600 font-bold uppercase">
-                          Distância Total
+                          Faltam
                         </p>
                         <p className="text-lg font-black text-blue-900">
                           {metricas.distancia}
@@ -331,7 +330,7 @@ export default function ListaDePedidos() {
                       </div>
                       <div className="bg-green-50 p-2 rounded-lg flex-1 text-center border border-green-100">
                         <p className="text-xs text-green-600 font-bold uppercase">
-                          Tempo Estimado
+                          Estimativa
                         </p>
                         <p className="text-lg font-black text-green-900">
                           {metricas.tempo}
@@ -340,8 +339,8 @@ export default function ListaDePedidos() {
                     </div>
                   )}
 
+                  {/* Endereços */}
                   <div className="space-y-4">
-                    {/* Bloco de Origem Chamativo */}
                     <div
                       onClick={() =>
                         abrirNoMaps(
@@ -365,7 +364,6 @@ export default function ListaDePedidos() {
                       <i className="fas fa-directions text-blue-600 text-2xl ml-4"></i>
                     </div>
 
-                    {/* Bloco de Destino Chamativo */}
                     <div
                       onClick={() =>
                         abrirNoMaps(
@@ -390,6 +388,7 @@ export default function ListaDePedidos() {
                     </div>
                   </div>
 
+                  {/* Detalhes Técnicos (Layout Mantido) */}
                   <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-2 text-sm text-gray-500">
                     {pedidoParaMostrar.tipo_item && (
                       <p>
@@ -416,6 +415,7 @@ export default function ListaDePedidos() {
                     )}
                   </div>
 
+                  {/* Mapa Dinâmico com 3 Ícones */}
                   {pedidoAtivo && (
                     <div className="mt-4 w-full h-80 rounded-lg overflow-hidden border border-gray-200 relative z-10">
                       <MapContainer
@@ -423,13 +423,17 @@ export default function ListaDePedidos() {
                           pedidoAtivo.origem_latitude,
                           pedidoAtivo.origem_longitude,
                         ]}
-                        zoom={13}
+                        zoom={14}
                         className="w-full h-full"
                       >
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+                        {/* 1. Ícone do Entregador (Sempre na posição GPS) */}
                         {minhaPosicao && (
                           <Marker position={minhaPosicao} icon={deliveryIcon} />
                         )}
+
+                        {/* 2. Ícone de Origem (Verde) */}
                         <Marker
                           position={[
                             pedidoAtivo.origem_latitude,
@@ -437,15 +441,17 @@ export default function ListaDePedidos() {
                           ]}
                           icon={iconOrigem}
                         />
-                        {pedidoAtivo.destino_latitude != null && (
-                          <Marker
-                            position={[
-                              pedidoAtivo.destino_latitude,
-                              pedidoAtivo.destino_longitude,
-                            ]}
-                            icon={iconDestino}
-                          />
-                        )}
+
+                        {/* 3. Ícone de Destino (Vermelho) */}
+                        <Marker
+                          position={[
+                            pedidoAtivo.destino_latitude,
+                            pedidoAtivo.destino_longitude,
+                          ]}
+                          icon={iconDestino}
+                        />
+
+                        {/* Rota Ativa */}
                         {rotaCaminho.length > 0 && (
                           <Polyline
                             positions={rotaCaminho}
@@ -454,6 +460,8 @@ export default function ListaDePedidos() {
                             opacity={0.7}
                           />
                         )}
+
+                        {/* Foca nos 3 pontos dinamicamente */}
                         <FitRoute
                           positions={[
                             minhaPosicao,
@@ -465,17 +473,18 @@ export default function ListaDePedidos() {
                               pedidoAtivo.destino_latitude,
                               pedidoAtivo.destino_longitude,
                             ],
-                          ].filter((p) => p && p[0] != null)}
+                          ]}
                         />
                       </MapContainer>
                     </div>
                   )}
 
+                  {/* Botões de Ação */}
                   <div className="pt-4 border-t border-gray-100 flex justify-end">
                     {!pedidoAtivo ? (
                       <button
                         onClick={() => handleAceitar(pedidoParaMostrar)}
-                        className="px-8 py-3 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center"
+                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center"
                       >
                         <i
                           className={`fas ${
@@ -487,7 +496,7 @@ export default function ListaDePedidos() {
                     ) : (
                       <button
                         onClick={handleAtualizarStatus}
-                        className={`w-full cursor-pointer py-4 text-white font-bold rounded-lg shadow-md transition ${
+                        className={`w-full py-4 text-white font-bold rounded-lg shadow-md transition ${
                           STATUS_FLOW[pedidoAtivo.status]?.class
                         }`}
                       >
@@ -509,7 +518,7 @@ export default function ListaDePedidos() {
                   </p>
                   <button
                     onClick={() => carregarDados(true)}
-                    className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+                    className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl font-black"
                   >
                     <i className="fas fa-sync-alt mr-2"></i> VERIFICAR NOVAMENTE
                   </button>
