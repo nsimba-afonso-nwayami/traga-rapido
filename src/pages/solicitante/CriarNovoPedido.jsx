@@ -234,7 +234,6 @@ export default function CriarNovoPedido() {
         usuario: user.id,
         titulo: "Pedido Criado",
         mensagem: `Seu pedido "${data.titulo}" foi criado com sucesso!`,
-        tipo: "SUCESSO",
       });
 
       // 2. Notificação para todos os Entregadores
@@ -253,7 +252,6 @@ export default function CriarNovoPedido() {
               usuario: entregador.id,
               titulo: "Novo Pedido Disponível",
               mensagem: `Novo pedido: "${data.titulo}". Verifique os detalhes na lista de entregas.`,
-              tipo: "INFO",
             })
           )
         );
