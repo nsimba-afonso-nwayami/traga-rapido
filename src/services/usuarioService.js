@@ -35,3 +35,13 @@ export async function updateSenhaUsuario(userId, dados) {
     throw error;
   }
 }
+
+export async function listarUsuarios() {
+  try {
+    const response = await api.get("/usuarios/");
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao listar usuários:", error);
+    throw error;
+  }
+}
