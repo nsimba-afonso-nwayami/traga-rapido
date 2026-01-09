@@ -11,3 +11,8 @@ export function listarNotificacoes() {
 export function obterNotificacao(id) {
   return api.get(`/notificacoes/${id}/`);
 }
+
+export function marcarComoLida(id) {
+  // Verifique se o seu backend Django exige o trailing slash (/) após o ID
+  return api.patch(`/notificacoes/${id}/`, { lida: true });
+}
