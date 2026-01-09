@@ -1,26 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../../contexts/AuthContext"; // Importando seu contexto
-import { listarNotificacoes } from "../../services/notificacaoService";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  listarNotificacoes,
+  marcarComoLida,
+} from "../../services/notificacaoService"; // Importado aqui
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
+import { toast } from "react-hot-toast";
 
 export default function NotificacoesEntregador() {
-  const { user } = useAuth(); // Acessando o usuário logado
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [todasNotificacoes, setTodasNotificacoes] = useState([]);
   const [limiteExibicao, setLimiteExibicao] = useState(6);
   const [loading, setLoading] = useState(true);
 
   const carregarDados = useCallback(async () => {
-    // Só prossegue se o usuário estiver carregado no contexto
     if (!user?.id) return;
-
     try {
       setLoading(true);
       const response = await listarNotificacoes();
       const dados = response.data.results || response.data;
 
-      // FILTRO: Exibe apenas notificações pertencentes ao ID do usuário logado
       const filtradas = dados.filter(
         (n) => Number(n.usuario) === Number(user.id)
       );
@@ -36,6 +37,34 @@ export default function NotificacoesEntregador() {
       setLoading(false);
     }
   }, [user?.id]);
+
+  // FUNÇÃO PARA MARCAR COMO LIDA
+  // Dentro de NotificacoesEntregador
+  const handleMarcarLida = async (id) => {
+    try {
+      // 1. Faz a chamada ao backend
+      const response = await marcarComoLida(id);
+
+      // 2. O Django REST costuma retornar 200 OK com o objeto atualizado
+      if (response.status === 200 || response.status === 204) {
+        // 3. Atualiza o estado local para garantir que a UI mude agora
+        setTodasNotificacoes((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
+        );
+
+        // 4. DISPARA EVENTO para o Header atualizar o contador vermelho imediatamente
+        window.dispatchEvent(new Event("notificacaoAtualizada"));
+
+        console.log(`Notificação ${id} marcada como lida com sucesso.`);
+      }
+    } catch (error) {
+      console.error(
+        "Erro detalhado ao marcar como lida:",
+        error.response?.data || error.message
+      );
+      toast.error("Erro ao salvar status no servidor.");
+    }
+  };
 
   useEffect(() => {
     carregarDados();
@@ -60,19 +89,23 @@ export default function NotificacoesEntregador() {
     }
   };
 
+  // Componente de Item Interno Atualizado
   const NotificationItem = ({
+    id,
     isUnread,
     icon,
     color,
     title,
     time,
     mensagem,
+    onMarkRead,
   }) => (
     <div
-      className={`p-4 border-b border-gray-200 flex items-start gap-4 transition duration-150 ${
+      onClick={() => isUnread && onMarkRead(id)} // Marca como lida ao clicar no card se estiver não lida
+      className={`p-4 border-b border-gray-200 flex items-start gap-4 transition duration-150 cursor-pointer ${
         isUnread
           ? "bg-blue-50/70 hover:bg-blue-100/70"
-          : "bg-white hover:bg-gray-50"
+          : "bg-white hover:bg-gray-50 opacity-80"
       }`}
     >
       <div
@@ -95,10 +128,23 @@ export default function NotificacoesEntregador() {
       </div>
       <div className="flex flex-col items-center shrink-0 gap-2">
         {isUnread && (
-          <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+          <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
         )}
-        <button className="text-gray-400 hover:text-blue-600 transition duration-150 p-1">
-          <i className="far fa-circle-check text-lg"></i>
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Evita disparar o clique do card pai
+            onMarkRead(id);
+          }}
+          className={`${
+            isUnread ? "text-gray-400 hover:text-blue-600" : "text-green-500"
+          } transition duration-150 p-1`}
+          title="Marcar como lida"
+        >
+          <i
+            className={`${
+              isUnread ? "far fa-circle" : "fas fa-circle-check"
+            } text-lg`}
+          ></i>
         </button>
       </div>
     </div>
@@ -136,9 +182,6 @@ export default function NotificacoesEntregador() {
                 {loading ? (
                   <div className="p-12 text-center text-blue-600">
                     <i className="fas fa-spinner fa-spin text-2xl"></i>
-                    <p className="text-sm mt-2 text-gray-500 font-medium">
-                      Buscando atualizações...
-                    </p>
                   </div>
                 ) : todasNotificacoes.length > 0 ? (
                   notificacoesVisiveis.map((n) => {
@@ -146,46 +189,30 @@ export default function NotificacoesEntregador() {
                     return (
                       <NotificationItem
                         key={n.id}
+                        id={n.id}
                         isUnread={!n.lida}
                         icon={estilo.icon}
                         color={estilo.color}
                         title={n.titulo}
                         mensagem={n.mensagem}
                         time={new Date(n.criado_em).toLocaleString("pt-BR")}
+                        onMarkRead={handleMarcarLida} // Passando a função
                       />
                     );
                   })
                 ) : (
-                  <div className="p-12 flex flex-col items-center justify-center text-center bg-white">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100 shadow-sm">
-                      <i className="fas fa-bell-slash text-3xl text-gray-300"></i>
-                    </div>
-                    <h4 className="text-lg font-bold text-gray-800">
-                      Sem notificações por aqui
-                    </h4>
-                    <p className="text-sm text-gray-500 max-w-xs mt-2 mb-6">
-                      No momento você não possui nenhum alerta vinculado à sua
-                      conta.
-                    </p>
-                    <button
-                      onClick={carregarDados}
-                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-md active:scale-95"
-                    >
-                      <i className="fas fa-sync-alt"></i>
-                      Atualizar Página
-                    </button>
+                  <div className="p-12 text-center">
+                    <p className="text-gray-500">Sem notificações</p>
                   </div>
                 )}
               </div>
 
-              {/* BOTÃO VOLTADO PARA O LAYOUT ORIGINAL */}
               {!loading && todasNotificacoes.length > limiteExibicao && (
                 <div className="p-4 flex justify-center border-t border-gray-100 bg-gray-50">
                   <button
                     onClick={carregarMais}
-                    className="text-sm text-gray-500 hover:text-blue-600 font-bold py-2 px-4 transition duration-150 flex items-center gap-2"
+                    className="text-sm text-gray-500 hover:text-blue-600 font-bold py-2 px-4 transition duration-150"
                   >
-                    <i className="fas fa-history text-xs"></i>
                     Ver notificações mais antigas
                   </button>
                 </div>
