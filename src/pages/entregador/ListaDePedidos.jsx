@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-hot-toast";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
@@ -20,6 +20,45 @@ import {
   marcarEntregue,
 } from "../../services/pedidoService";
 import { getUsuario } from "../../services/usuarioService";
+
+// --- UTILITÁRIOS ---
+
+function calcularDistanciaMetros(pos1, pos2) {
+  if (!pos1 || !pos2) return 0;
+  const R = 6371e3;
+  const dLat = ((pos2[0] - pos1[0]) * Math.PI) / 180;
+  const dLon = ((pos2[1] - pos1[1]) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((pos1[0] * Math.PI) / 180) *
+      Math.cos((pos2[0] * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+const tocarSom = (tipo) => {
+  try {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    // Frequência alta para desvio, frequência grave e dupla para chegada
+    oscillator.frequency.setValueAtTime(
+      tipo === "chegada" ? 440 : 880,
+      context.currentTime
+    );
+    gain.gain.setValueAtTime(0.1, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.5);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.5);
+  } catch (e) {
+    console.error("Erro de áudio", e);
+  }
+};
 
 // --- CONFIGURAÇÃO DE ÍCONES ---
 const iconOrigem = new L.Icon({
@@ -45,12 +84,11 @@ const iconDestino = new L.Icon({
 });
 
 const deliveryIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/71/71422.png", // Ícone de Moto
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/71/71422.png",
   iconSize: [35, 35],
   iconAnchor: [17, 17],
 });
 
-// Componente para ajustar o zoom automaticamente entre os 3 pontos
 function FitRoute({ positions }) {
   const map = useMap();
   useEffect(() => {
@@ -68,28 +106,28 @@ const STATUS_FLOW = {
   PROPOSTA_ACEITA: {
     proximo: "ENTREGADOR_A_CAMINHO",
     label: "Iniciar Deslocamento",
-    class: "bg-blue-600",
+    class: "bg-blue-600 hover:bg-blue-700",
     msg: "Indo buscar o item!",
     action: marcarACaminho,
   },
   ENTREGADOR_A_CAMINHO: {
     proximo: "ITEM_RETIRADO",
     label: "Cheguei / Retirei o Item",
-    class: "bg-yellow-500",
+    class: "bg-yellow-500 hover:bg-yellow-600",
     msg: "Item em mãos!",
     action: marcarItemRetirado,
   },
   ITEM_RETIRADO: {
     proximo: "EM_ENTREGA",
     label: "Iniciar Rota de Entrega",
-    class: "bg-purple-600",
+    class: "bg-purple-600 hover:bg-purple-700",
     msg: "Saindo para entrega!",
     action: marcarEmEntrega,
   },
   EM_ENTREGA: {
     proximo: "ENTREGUE",
     label: "Confirmar Entrega Final",
-    class: "bg-green-600",
+    class: "bg-green-600 hover:bg-green-700",
     msg: "Corrida finalizada!",
     action: marcarEntregue,
   },
@@ -105,7 +143,9 @@ export default function ListaDePedidos() {
   const [minhaPosicao, setMinhaPosicao] = useState(null);
   const [metricas, setMetricas] = useState({ distancia: "", tempo: "" });
 
-  // Monitoramento do GPS em tempo real
+  const ultimaPosicaoRotaRef = useRef(null);
+  const avisouChegadaRef = useRef(false);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
@@ -115,23 +155,6 @@ export default function ListaDePedidos() {
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
-
-  const abrirNoMaps = (lat, lon) => {
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=motorcycle`,
-      "_blank"
-    );
-  };
-
-  const abrirWhatsApp = (telefone, titulo) => {
-    const msg = encodeURIComponent(
-      `Olá, sou o entregador do seu pedido "${titulo}". Já estou a caminho!`
-    );
-    window.open(
-      `https://wa.me/${telefone.replace(/\D/g, "")}?text=${msg}`,
-      "_blank"
-    );
-  };
 
   const carregarDados = useCallback(
     async (isFirstLoad = false) => {
@@ -156,6 +179,7 @@ export default function ListaDePedidos() {
               usernameSolicitante: u.username,
               telefoneSolicitante: u.telefone,
             });
+            avisouChegadaRef.current = false; // Resetar alerta de chegada para novo status
           }
         } else {
           setPedidoAtivo(null);
@@ -164,7 +188,7 @@ export default function ListaDePedidos() {
           setPedidos(abertos.length > 0 ? [abertos[0]] : []);
         }
       } catch (error) {
-        if (isFirstLoad) toast.error("Erro ao carregar dados.");
+        if (isFirstLoad) toast.error("Erro ao carregar.");
       } finally {
         if (isFirstLoad) setLoading(false);
       }
@@ -178,7 +202,6 @@ export default function ListaDePedidos() {
     return () => clearInterval(interval);
   }, [carregarDados]);
 
-  // Cálculo de rota dinâmica (sempre da posição atual até o próximo ponto)
   const calcularRotaDinamica = useCallback(async (latI, lonI, latF, lonF) => {
     if (!latI || !latF) return;
     try {
@@ -195,41 +218,75 @@ export default function ListaDePedidos() {
         });
       }
     } catch (err) {
-      console.error("Erro na rota:", err);
+      console.error("Erro rota", err);
     }
   }, []);
 
   useEffect(() => {
     if (pedidoAtivo && minhaPosicao) {
-      const status = pedidoAtivo.status;
-      // Se já retirou o item, a meta é o destino. Caso contrário, a meta é a origem.
+      const {
+        status,
+        destino_latitude,
+        destino_longitude,
+        origem_latitude,
+        origem_longitude,
+      } = pedidoAtivo;
       const metaLat =
         status === "ITEM_RETIRADO" || status === "EM_ENTREGA"
-          ? pedidoAtivo.destino_latitude
-          : pedidoAtivo.origem_latitude;
+          ? destino_latitude
+          : origem_latitude;
       const metaLon =
         status === "ITEM_RETIRADO" || status === "EM_ENTREGA"
-          ? pedidoAtivo.destino_longitude
-          : pedidoAtivo.origem_longitude;
+          ? destino_longitude
+          : origem_longitude;
 
-      calcularRotaDinamica(minhaPosicao[0], minhaPosicao[1], metaLat, metaLon);
+      const distMeta = calcularDistanciaMetros(minhaPosicao, [
+        metaLat,
+        metaLon,
+      ]);
+      const desvio = calcularDistanciaMetros(
+        minhaPosicao,
+        ultimaPosicaoRotaRef.current
+      );
+
+      // Alerta de Chegada (100m)
+      if (distMeta < 100 && !avisouChegadaRef.current) {
+        tocarSom("chegada");
+        toast.success("Estás a menos de 100m do ponto!", { duration: 4000 });
+        avisouChegadaRef.current = true;
+      }
+
+      // Recálculo por Desvio (40m)
+      if (!ultimaPosicaoRotaRef.current || desvio > 40) {
+        if (ultimaPosicaoRotaRef.current) {
+          tocarSom("desvio");
+          toast("Recalculando...", { icon: "🔄" });
+        }
+        calcularRotaDinamica(
+          minhaPosicao[0],
+          minhaPosicao[1],
+          metaLat,
+          metaLon
+        );
+        ultimaPosicaoRotaRef.current = minhaPosicao;
+      }
     }
-  }, [minhaPosicao, pedidoAtivo?.status, calcularRotaDinamica]);
+  }, [minhaPosicao, pedidoAtivo?.status, calcularRotaDinamica, pedidoAtivo]);
 
-  async function handleAceitar(pedido) {
+  const handleAceitar = async (pedido) => {
     setAceitandoId(pedido.id);
     try {
       await aceitarPedido(pedido.id);
-      toast.success("Corrida iniciada!");
+      toast.success("Iniciado!");
       carregarDados(true);
-    } catch (error) {
-      toast.error("Erro ao aceitar.");
+    } catch (e) {
+      toast.error("Erro.");
     } finally {
       setAceitandoId(null);
     }
-  }
+  };
 
-  async function handleAtualizarStatus() {
+  const handleAtualizarStatus = async () => {
     const config = STATUS_FLOW[pedidoAtivo.status];
     if (!config) return;
     try {
@@ -238,14 +295,28 @@ export default function ListaDePedidos() {
       if (config.proximo === "ENTREGUE") {
         setPedidoAtivo(null);
         setRotaCaminho([]);
+        ultimaPosicaoRotaRef.current = null;
         carregarDados(true);
       } else {
         setPedidoAtivo({ ...pedidoAtivo, status: config.proximo });
       }
-    } catch (error) {
+    } catch (e) {
       toast.error("Erro ao atualizar.");
     }
-  }
+  };
+
+  const abrirNoMaps = (lat, lon) =>
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=motorcycle`,
+      "_blank"
+    );
+  const abrirWhatsApp = (tel, tit) =>
+    window.open(
+      `https://wa.me/${tel.replace(/\D/g, "")}?text=${encodeURIComponent(
+        `Olá, sou o entregador do pedido "${tit}". Estou a caminho!`
+      )}`,
+      "_blank"
+    );
 
   const pedidoParaMostrar = pedidoAtivo || pedidos[0];
 
@@ -260,21 +331,23 @@ export default function ListaDePedidos() {
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
-
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100">
           <div className="h-20 w-full shrink-0"></div>
-
           <div className="max-w-4xl mx-auto pb-10">
             {pedidoParaMostrar ? (
               <div className="bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-blue-600">
                 <div className="p-5 sm:p-6 space-y-4">
-                  {/* Cabeçalho do Card */}
                   <div className="flex justify-between items-start border-b pb-3 mb-3">
                     <div>
                       <h4 className="text-xl font-extrabold text-gray-900">
                         {pedidoParaMostrar.titulo}
                       </h4>
-                      <p className="text-xs text-gray-500">
+                      {pedidoParaMostrar.descricao && (
+                        <p className="text-sm text-gray-600 mt-1 italic">
+                          "{pedidoParaMostrar.descricao}"
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
                         Pedido #{pedidoParaMostrar.id}
                       </p>
                       <p className="text-sm font-bold text-blue-700 mt-2">
@@ -287,10 +360,9 @@ export default function ListaDePedidos() {
                           <>
                             <a
                               href={`tel:${pedidoParaMostrar.telefoneSolicitante}`}
-                              className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md shadow-sm"
+                              className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md shadow-sm cursor-pointer hover:bg-green-700 transition"
                             >
-                              <i className="fas fa-phone mr-2"></i> Ligar:{" "}
-                              {pedidoParaMostrar.telefoneSolicitante}
+                              <i className="fas fa-phone mr-2"></i> Ligar
                             </a>
                             <button
                               onClick={() =>
@@ -299,7 +371,7 @@ export default function ListaDePedidos() {
                                   pedidoParaMostrar.titulo
                                 )
                               }
-                              className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-md shadow-sm"
+                              className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-md shadow-sm cursor-pointer hover:bg-emerald-600 transition"
                             >
                               <i className="fab fa-whatsapp mr-2"></i> WhatsApp
                             </button>
@@ -317,7 +389,6 @@ export default function ListaDePedidos() {
                     </div>
                   </div>
 
-                  {/* Métricas Dinâmicas */}
                   {pedidoAtivo && metricas.distancia && (
                     <div className="flex gap-4 mb-2">
                       <div className="bg-blue-50 p-2 rounded-lg flex-1 text-center border border-blue-100">
@@ -339,7 +410,6 @@ export default function ListaDePedidos() {
                     </div>
                   )}
 
-                  {/* Endereços */}
                   <div className="space-y-4">
                     <div
                       onClick={() =>
@@ -348,7 +418,7 @@ export default function ListaDePedidos() {
                           pedidoParaMostrar.origem_longitude
                         )
                       }
-                      className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors shadow-sm"
+                      className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm"
                     >
                       <div className="flex items-start text-sm">
                         <i className="fas fa-location-arrow mt-1 mr-3 text-blue-600 text-lg"></i>
@@ -371,7 +441,7 @@ export default function ListaDePedidos() {
                           pedidoParaMostrar.destino_longitude
                         )
                       }
-                      className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition-colors shadow-sm"
+                      className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm"
                     >
                       <div className="flex items-start text-sm">
                         <i className="fas fa-map-marker-alt mt-1 mr-3 text-red-600 text-lg"></i>
@@ -388,7 +458,6 @@ export default function ListaDePedidos() {
                     </div>
                   </div>
 
-                  {/* Detalhes Técnicos (Layout Mantido) */}
                   <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-2 text-sm text-gray-500">
                     {pedidoParaMostrar.tipo_item && (
                       <p>
@@ -415,7 +484,6 @@ export default function ListaDePedidos() {
                     )}
                   </div>
 
-                  {/* Mapa Dinâmico com 3 Ícones */}
                   {pedidoAtivo && (
                     <div className="mt-4 w-full h-80 rounded-lg overflow-hidden border border-gray-200 relative z-10">
                       <MapContainer
@@ -427,13 +495,9 @@ export default function ListaDePedidos() {
                         className="w-full h-full"
                       >
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-                        {/* 1. Ícone do Entregador (Sempre na posição GPS) */}
                         {minhaPosicao && (
                           <Marker position={minhaPosicao} icon={deliveryIcon} />
                         )}
-
-                        {/* 2. Ícone de Origem (Verde) */}
                         <Marker
                           position={[
                             pedidoAtivo.origem_latitude,
@@ -441,8 +505,6 @@ export default function ListaDePedidos() {
                           ]}
                           icon={iconOrigem}
                         />
-
-                        {/* 3. Ícone de Destino (Vermelho) */}
                         <Marker
                           position={[
                             pedidoAtivo.destino_latitude,
@@ -450,8 +512,6 @@ export default function ListaDePedidos() {
                           ]}
                           icon={iconDestino}
                         />
-
-                        {/* Rota Ativa */}
                         {rotaCaminho.length > 0 && (
                           <Polyline
                             positions={rotaCaminho}
@@ -460,8 +520,6 @@ export default function ListaDePedidos() {
                             opacity={0.7}
                           />
                         )}
-
-                        {/* Foca nos 3 pontos dinamicamente */}
                         <FitRoute
                           positions={[
                             minhaPosicao,
@@ -479,12 +537,11 @@ export default function ListaDePedidos() {
                     </div>
                   )}
 
-                  {/* Botões de Ação */}
                   <div className="pt-4 border-t border-gray-100 flex justify-end">
                     {!pedidoAtivo ? (
                       <button
                         onClick={() => handleAceitar(pedidoParaMostrar)}
-                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center"
+                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center cursor-pointer transition"
                       >
                         <i
                           className={`fas ${
@@ -496,7 +553,7 @@ export default function ListaDePedidos() {
                     ) : (
                       <button
                         onClick={handleAtualizarStatus}
-                        className={`w-full py-4 text-white font-bold rounded-lg shadow-md transition ${
+                        className={`w-full py-4 text-white font-bold rounded-lg shadow-md transition cursor-pointer ${
                           STATUS_FLOW[pedidoAtivo.status]?.class
                         }`}
                       >
@@ -514,11 +571,11 @@ export default function ListaDePedidos() {
                     <i className="fas fa-box-open text-6xl"></i>
                   </div>
                   <p className="text-gray-500 font-bold text-xl">
-                    Não há novos pedidos para ser aceite.
+                    Não há novos pedidos.
                   </p>
                   <button
                     onClick={() => carregarDados(true)}
-                    className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl font-black"
+                    className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-xl font-black cursor-pointer hover:bg-blue-700 transition"
                   >
                     <i className="fas fa-sync-alt mr-2"></i> VERIFICAR NOVAMENTE
                   </button>
