@@ -38,6 +38,14 @@ export default function SidebarSolicitante({ sidebarOpen, setSidebarOpen }) {
           </Link>
 
           <Link
+            to="/dashboard/solicitante/mensagens"
+            className="block p-3 rounded-lg hover:bg-blue-500/40"
+          >
+            <i className="fas fa-message mr-3 text-blue-500"></i>
+            Mensagens
+          </Link>
+
+          <Link
             to="/dashboard/solicitante/pedidos"
             className="block p-3 rounded-lg hover:bg-blue-500/40"
           >
