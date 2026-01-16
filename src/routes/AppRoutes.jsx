@@ -29,6 +29,8 @@ import NotFoundSolicitante from "../pages/solicitante/NotFoundSolicitante";
 
 // Entregador
 import DashboardEntregador from "../pages/entregador/Dashboard";
+import MensagensEntregador from "../pages/entregador/MensagensEntregador";
+import ChatEntregador from "../pages/entregador/ChatEntregador";
 import ListaDePedidos from "../pages/entregador/ListaDePedidos";
 import HistoricoEntregador from "../pages/entregador/HistoricoEntregador";
 import NotificacoesEntregador from "../pages/entregador/NotificacoesEntregador";
@@ -74,6 +76,8 @@ export default function AppRoutes() {
       <Route element={<RolePrivateRoute allowedRoles={["ENTREGADOR"]} />}>
         <Route path="/dashboard/entregador">
           <Route index element={<DashboardEntregador />} />
+          <Route path="mensagens" element={<MensagensEntregador />} />
+          <Route path="mensagens/chat/" element={<ChatEntregador />} />
           <Route path="lista-pedidos" element={<ListaDePedidos />} />
           <Route path="historico" element={<HistoricoEntregador />} />
           <Route path="notificacoes" element={<NotificacoesEntregador />} />
