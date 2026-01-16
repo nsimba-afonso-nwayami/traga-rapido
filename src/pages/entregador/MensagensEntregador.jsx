@@ -1,33 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
+import { listarPedidosDisponiveis } from "../../services/pedidoService";
+import { buscarMensagensPorPedido } from "../../services/mensagensService";
+import { getUsuario } from "../../services/usuarioService";
 
 export default function MensagensEntregador() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [limiteExibicao, setLimiteExibicao] = useState(6);
+  const [conversas, setConversas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState("");
 
-  // Mock de dados para o layout do Entregador
-  const [conversas] = useState([
-    {
-      id: 1,
-      nome: "Carlos Andrade (Solicitante)",
-      ultimaMensagem: "Pode deixar na portaria, por favor.",
-      horario: "10:15",
-      naoLidas: 1,
-      online: true,
-    },
-    {
-      id: 2,
-      nome: "Ana Beatriz (Solicitante)",
-      ultimaMensagem: "Obrigado pela entrega rápida!",
-      horario: "Ontem",
-      naoLidas: 0,
-      online: false,
-    },
-  ]);
+  useEffect(() => {
+    async function carregarDados() {
+      setLoading(true);
+      try {
+        const userId = localStorage.getItem("userId");
+        // 1. Busca todos os pedidos
+        const todosPedidos = await listarPedidosDisponiveis();
 
-  const conversasVisiveis = conversas.slice(0, limiteExibicao);
+        // 2. Filtra apenas os pedidos que pertencem a este entregador e não foram finalizados ainda (ou recentes)
+        const meusPedidos = todosPedidos.filter(
+          (p) => String(p.entregador) === String(userId)
+        );
+
+        // 3. Para cada pedido, busca os detalhes do solicitante e a última mensagem
+        const listaFormatada = await Promise.all(
+          meusPedidos.map(async (pedido) => {
+            try {
+              const [msgs, solicitante] = await Promise.all([
+                buscarMensagensPorPedido(pedido.id),
+                getUsuario(pedido.solicitante),
+              ]);
+
+              const ultimaMsg =
+                msgs.length > 0
+                  ? msgs[msgs.length - 1]
+                  : { texto: "Sem mensagens ainda", criado_em: null };
+
+              return {
+                id: pedido.id,
+                nome: solicitante.username || "Cliente",
+                ultimaMensagem: ultimaMsg.texto,
+                horario: ultimaMsg.criado_em
+                  ? new Date(ultimaMsg.criado_em).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "",
+                naoLidas: 0, // Campo para futura implementação de lido/não lido
+                online: false,
+              };
+            } catch (err) {
+              return {
+                id: pedido.id,
+                nome: "Pedido #" + pedido.id,
+                ultimaMensagem: "Conversa do pedido",
+                horario: "",
+                naoLidas: 0,
+                online: false,
+              };
+            }
+          })
+        );
+
+        // Ordenar por horário (mais recentes primeiro)
+        setConversas(listaFormatada);
+      } catch (error) {
+        console.error("Erro ao carregar mensagens:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarDados();
+  }, []);
+
+  // Lógica de Filtro
+  const conversasFiltradas = conversas.filter((c) =>
+    c.nome.toLowerCase().includes(filtro.toLowerCase())
+  );
+
+  const conversasVisiveis = conversasFiltradas.slice(0, limiteExibicao);
 
   const carregarMais = () => {
     setLimiteExibicao((prev) => prev + 6);
@@ -41,7 +97,7 @@ export default function MensagensEntregador() {
       {/* Avatar */}
       <div className="relative shrink-0">
         <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          {chat.nome.charAt(0)}
+          {chat.nome.charAt(0).toUpperCase()}
         </div>
         {chat.online && (
           <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
@@ -108,6 +164,8 @@ export default function MensagensEntregador() {
                   <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                   <input
                     type="text"
+                    value={filtro}
+                    onChange={(e) => setFiltro(e.target.value)}
                     placeholder="Buscar cliente..."
                     className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   />
@@ -116,7 +174,12 @@ export default function MensagensEntregador() {
 
               {/* Lista */}
               <div className="divide-y divide-gray-100">
-                {conversas.length > 0 ? (
+                {loading ? (
+                  <div className="p-12 text-center text-gray-500">
+                    <i className="fas fa-circle-notch fa-spin mr-2"></i>{" "}
+                    Carregando conversas...
+                  </div>
+                ) : conversasFiltradas.length > 0 ? (
                   conversasVisiveis.map((chat) => (
                     <ChatItem key={chat.id} chat={chat} />
                   ))
@@ -126,14 +189,14 @@ export default function MensagensEntregador() {
                       <i className="fas fa-comments text-2xl text-gray-300"></i>
                     </div>
                     <p className="text-gray-500 font-medium">
-                      Nenhuma conversa no momento.
+                      Nenhuma conversa encontrada.
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Botão Ver Mais */}
-              {conversas.length > limiteExibicao && (
+              {conversasFiltradas.length > limiteExibicao && (
                 <div className="p-4 flex justify-center border-t border-gray-100 bg-gray-50">
                   <button
                     onClick={carregarMais}
