@@ -37,6 +37,14 @@ export default function SidebarEntregador({ sidebarOpen, setSidebarOpen }) {
           </Link>
 
           <Link
+            to="/dashboard/entregador/mensagens"
+            className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors"
+          >
+            <i className="fas fa-message mr-3 text-blue-400"></i>
+            Mensagens
+          </Link>
+
+          <Link
             to="/dashboard/entregador/lista-pedidos"
             className="block p-3 rounded-lg hover:bg-blue-600/40 cursor-pointer transition-colors"
           >
