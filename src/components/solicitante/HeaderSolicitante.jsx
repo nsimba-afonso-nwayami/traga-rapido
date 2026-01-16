@@ -8,6 +8,7 @@ export default function HeaderSolicitante({ sidebarOpen, setSidebarOpen }) {
   // Títulos automáticos por rota
   const titles = {
     "/dashboard/solicitante/": "Painel do Solicitante",
+    "/dashboard/solicitante/mensagens": "Mensagens",
     "/dashboard/solicitante/pedidos": "Meus Pedidos",
     "/dashboard/solicitante/novo-pedido": "Criar Novo Pedido",
     "/dashboard/solicitante/editar-pedido": "Editar Pedido",
@@ -20,6 +21,7 @@ export default function HeaderSolicitante({ sidebarOpen, setSidebarOpen }) {
   // Ícones automáticos
   const icons = {
     "/dashboard/solicitante/": "fas fa-user",
+    "/dashboard/solicitante/mensagens": "fas fa-message",
     "/dashboard/solicitante/pedidos": "fas fa-box",
     "/dashboard/solicitante/novo-pedido": "fas fa-plus-circle",
     "/dashboard/solicitante/editar-pedido": "fas fa-edit",
