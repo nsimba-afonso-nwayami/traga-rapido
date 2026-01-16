@@ -56,6 +56,8 @@ export default function HeaderEntregador({
   // Títulos automáticos por rota
   const titles = {
     "/dashboard/entregador/": "Painel do Entregador",
+    "/dashboard/entregador/mensagens/": "Mensagens",
+    "/dashboard/entregador/mensagens/chat/": "Chat",
     "/dashboard/entregador/lista-pedidos": "Lista de Pedidos",
     "/dashboard/entregador/detalhes-corrida": "Detalhes da Corrida",
     "/dashboard/entregador/historico": "Histórico de Corridas",
@@ -66,6 +68,8 @@ export default function HeaderEntregador({
   // Ícones automáticos por rota
   const icons = {
     "/dashboard/entregador/": "fas fa-motorcycle",
+    "/dashboard/entregador/mensagens/": "fas fa-message",
+    "/dashboard/entregador/mensagens/chat/": "fas fa-message",
     "/dashboard/entregador/lista-pedidos": "fas fa-list",
     "/dashboard/entregador/detalhes-corrida": "fas fa-map-marker-alt",
     "/dashboard/entregador/historico": "fas fa-history",
