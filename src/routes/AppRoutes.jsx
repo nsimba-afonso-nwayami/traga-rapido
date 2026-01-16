@@ -16,6 +16,7 @@ import VerifiqueEmail from "../pages/auth/VerifiqueEmail";
 
 // Solicitante
 import DashboardSolicitante from "../pages/solicitante/Dashboard";
+import MensagensSolicitante from "../pages/solicitante/MensagensSolicitante";
 import MeusPedidos from "../pages/solicitante/MeusPedidos";
 import CriarNovoPedido from "../pages/solicitante/CriarNovoPedido";
 import EditarPedido from "../pages/solicitante/EditarPedido";
@@ -55,6 +56,7 @@ export default function AppRoutes() {
       <Route element={<RolePrivateRoute allowedRoles={["SOLICITANTE"]} />}>
         <Route path="/dashboard/solicitante">
           <Route index element={<DashboardSolicitante />} />
+          <Route path="mensagens" element={<MensagensSolicitante />} />
           <Route path="pedidos" element={<MeusPedidos />} />
           <Route path="novo-pedido" element={<CriarNovoPedido />} />
           <Route path="editar-pedido" element={<EditarPedido />} />
