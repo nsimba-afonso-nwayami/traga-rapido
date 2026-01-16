@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom"; // Importado para navegação
 import { toast } from "react-hot-toast";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
@@ -44,7 +45,6 @@ const tocarSom = (tipo) => {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = "sine";
-    // Frequência alta para desvio, frequência grave e dupla para chegada
     oscillator.frequency.setValueAtTime(
       tipo === "chegada" ? 440 : 880,
       context.currentTime
@@ -134,6 +134,7 @@ const STATUS_FLOW = {
 };
 
 export default function ListaDePedidos() {
+  const navigate = useNavigate(); // Hook para navegação
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,7 +180,7 @@ export default function ListaDePedidos() {
               usernameSolicitante: u.username,
               telefoneSolicitante: u.telefone,
             });
-            avisouChegadaRef.current = false; // Resetar alerta de chegada para novo status
+            avisouChegadaRef.current = false;
           }
         } else {
           setPedidoAtivo(null);
@@ -249,14 +250,12 @@ export default function ListaDePedidos() {
         ultimaPosicaoRotaRef.current
       );
 
-      // Alerta de Chegada (100m)
       if (distMeta < 100 && !avisouChegadaRef.current) {
         tocarSom("chegada");
         toast.success("Estás a menos de 100m do ponto!", { duration: 4000 });
         avisouChegadaRef.current = true;
       }
 
-      // Recálculo por Desvio (40m)
       if (!ultimaPosicaoRotaRef.current || desvio > 40) {
         if (ultimaPosicaoRotaRef.current) {
           tocarSom("desvio");
@@ -355,9 +354,24 @@ export default function ListaDePedidos() {
                         {pedidoParaMostrar.usernameSolicitante ||
                           "Carregando..."}
                       </p>
-                      <div className="mt-2 flex gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         {pedidoParaMostrar.telefoneSolicitante && (
                           <>
+                            {/* BOTÃO CHAT INTERNO (Aparece ao aceitar o pedido) */}
+                            {pedidoAtivo && (
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/dashboard/entregador/mensagens/chat/${pedidoParaMostrar.id}`
+                                  )
+                                }
+                                className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-md shadow-sm cursor-pointer hover:bg-blue-700 transition"
+                              >
+                                <i className="fas fa-comments mr-2"></i> Abrir
+                                Chat
+                              </button>
+                            )}
+
                             <a
                               href={`tel:${pedidoParaMostrar.telefoneSolicitante}`}
                               className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md shadow-sm cursor-pointer hover:bg-green-700 transition"
