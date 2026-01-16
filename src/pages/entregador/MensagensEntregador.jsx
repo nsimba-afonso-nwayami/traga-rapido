@@ -35,7 +35,7 @@ export default function MensagensEntregador() {
 
   const ChatItem = ({ chat }) => (
     <Link
-      to={`/entregador/mensagens/chat/${chat.id}`}
+      to={`/dashboard/entregador/mensagens/chat/${chat.id}`}
       className="flex items-center gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition duration-150 group"
     >
       {/* Avatar */}
