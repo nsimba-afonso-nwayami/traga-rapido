@@ -60,7 +60,7 @@ export default function AppRoutes() {
         <Route path="/dashboard/solicitante">
           <Route index element={<DashboardSolicitante />} />
           <Route path="mensagens" element={<MensagensSolicitante />} />
-          <Route path="mensagens/chat/" element={<ChatSolicitante />} />
+          <Route path="mensagens/chat/:id" element={<ChatSolicitante />} />
           <Route path="pedidos" element={<MeusPedidos />} />
           <Route path="novo-pedido" element={<CriarNovoPedido />} />
           <Route path="editar-pedido" element={<EditarPedido />} />
@@ -77,7 +77,7 @@ export default function AppRoutes() {
         <Route path="/dashboard/entregador">
           <Route index element={<DashboardEntregador />} />
           <Route path="mensagens" element={<MensagensEntregador />} />
-          <Route path="mensagens/chat/" element={<ChatEntregador />} />
+          <Route path="mensagens/chat/:id" element={<ChatEntregador />} />
           <Route path="lista-pedidos" element={<ListaDePedidos />} />
           <Route path="historico" element={<HistoricoEntregador />} />
           <Route path="notificacoes" element={<NotificacoesEntregador />} />
