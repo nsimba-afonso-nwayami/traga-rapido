@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import SidebarEntregador from "../../components/entregador/SidebarEntregador";
 import HeaderEntregador from "../../components/entregador/HeaderEntregador";
@@ -8,11 +8,13 @@ import {
 } from "../../services/mensagensService";
 
 export default function ChatEntregador() {
-  const { id } = useParams(); // ID do Pedido
+  const { id } = useParams(); // ID do Pedido (UUID)
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [novaMensagem, setNovaMensagem] = useState("");
   const [mensagens, setMensagens] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const messagesEndRef = useRef(null);
   const userId = localStorage.getItem("userId");
 
@@ -20,30 +22,51 @@ export default function ChatEntregador() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const carregarMensagens = async () => {
-    try {
-      const data = await buscarMensagensPorPedido(id);
-      const formatadas = data.map((msg) => ({
-        id: msg.id,
-        texto: msg.texto,
-        enviadaPorMim: String(msg.remetente) === String(userId),
-        horario: new Date(msg.criado_em).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      }));
-      setMensagens(formatadas);
-    } catch (error) {
-      console.error("Erro ao carregar mensagens");
-    }
-  };
+  const carregarMensagens = useCallback(
+    async (isFirstLoad = false) => {
+      if (isFirstLoad) setLoading(true);
+      try {
+        const data = await buscarMensagensPorPedido(id);
 
+        // Validação: Garante que 'data' é um array antes de mapear
+        if (data && Array.isArray(data)) {
+          const formatadas = data.map((msg) => ({
+            id: msg.id,
+            texto: msg.texto,
+            enviadaPorMim: String(msg.remetente) === String(userId),
+            horario: msg.criado_em
+              ? new Date(msg.criado_em).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--:--",
+          }));
+          setMensagens(formatadas);
+        }
+      } catch (error) {
+        console.error(
+          "Erro detalhado ao carregar mensagens:",
+          error.response?.data || error.message,
+        );
+      } finally {
+        if (isFirstLoad) setLoading(false);
+      }
+    },
+    [id, userId],
+  );
+
+  // Efeito para carregar dados iniciais e definir o intervalo (Polling)
   useEffect(() => {
-    carregarMensagens();
-    const interval = setInterval(carregarMensagens, 4000); // Atualiza a cada 4s
-    return () => clearInterval(interval);
-  }, [id]);
+    carregarMensagens(true);
 
+    const interval = setInterval(() => {
+      carregarMensagens(false);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [carregarMensagens]);
+
+  // Efeito para rolar a tela sempre que houver novas mensagens
   useEffect(() => {
     scrollToBottom();
   }, [mensagens]);
@@ -52,13 +75,15 @@ export default function ChatEntregador() {
     e.preventDefault();
     if (!novaMensagem.trim()) return;
 
+    const textoParaEnviar = novaMensagem;
+    setNovaMensagem(""); // Otimismo na UI: limpa antes da resposta da API
+
     try {
-      const textoParaEnviar = novaMensagem;
-      setNovaMensagem(""); // Limpa o input para melhor UX
       await apiEnviarMensagem(textoParaEnviar, id);
-      carregarMensagens(); // Recarrega após enviar
+      await carregarMensagens();
     } catch (error) {
-      alert("Erro ao enviar mensagem");
+      console.error("Erro ao enviar:", error);
+      alert("Não foi possível enviar a mensagem. Verifique sua conexão.");
     }
   };
 
@@ -73,8 +98,10 @@ export default function ChatEntregador() {
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
+
         <main className="flex-1 flex flex-col bg-white mt-16 md:mt-20 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 flex items-center gap-4 bg-white shadow-sm shrink-0">
+          {/* Cabeçalho do Chat */}
+          <div className="p-4 border-b border-gray-200 flex items-center gap-4 bg-white shadow-sm shrink-0 z-10">
             <button
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
@@ -89,42 +116,58 @@ export default function ChatEntregador() {
             </div>
             <div>
               <h3 className="font-bold text-gray-800 leading-tight">Cliente</h3>
-              <p className="text-xs text-green-600 font-medium">Online</p>
+              <p className="text-xs text-green-600 font-medium tracking-wide">
+                Online • Pedido #{id.slice(0, 8)}
+              </p>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-            {mensagens.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${
-                  msg.enviadaPorMim ? "justify-end" : "justify-start"
-                }`}
-              >
+          {/* Área das Mensagens */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8f9fa]">
+            {loading ? (
+              <div className="flex justify-center items-center h-full">
+                <i className="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+              </div>
+            ) : mensagens.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2">
+                <i className="fas fa-comments text-4xl mb-2"></i>
+                <p className="text-sm font-medium">Nenhuma mensagem ainda.</p>
+                <p className="text-xs">Inicie a conversa sobre a entrega.</p>
+              </div>
+            ) : (
+              mensagens.map((msg) => (
                 <div
-                  className={`max-w-[80%] px-4 py-2.5 rounded-2xl shadow-sm text-sm ${
-                    msg.enviadaPorMim
-                      ? "bg-blue-600 text-white rounded-tr-none"
-                      : "bg-white text-gray-800 border border-gray-200 rounded-tl-none"
+                  key={msg.id}
+                  className={`flex ${
+                    msg.enviadaPorMim ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <p>{msg.texto}</p>
-                  <p
-                    className={`text-[10px] mt-1 flex items-center gap-1 ${
-                      msg.enviadaPorMim ? "text-blue-100" : "text-gray-400"
+                  <div
+                    className={`max-w-[85%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm text-sm ${
+                      msg.enviadaPorMim
+                        ? "bg-blue-600 text-white rounded-tr-none"
+                        : "bg-white text-gray-800 border border-gray-200 rounded-tl-none"
                     }`}
                   >
-                    {msg.horario}
-                    {msg.enviadaPorMim && (
-                      <i className="fas fa-check-double"></i>
-                    )}
-                  </p>
+                    <p className="whitespace-pre-wrap">{msg.texto}</p>
+                    <div
+                      className={`text-[10px] mt-1 flex items-center justify-end gap-1 ${
+                        msg.enviadaPorMim ? "text-blue-100" : "text-gray-400"
+                      }`}
+                    >
+                      {msg.horario}
+                      {msg.enviadaPorMim && (
+                        <i className="fas fa-check-double text-[8px]"></i>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Input de Texto */}
           <div className="p-4 bg-white border-t border-gray-200">
             <form
               onSubmit={handleEnviar}
@@ -132,7 +175,7 @@ export default function ChatEntregador() {
             >
               <button
                 type="button"
-                className="p-3 text-gray-400 hover:text-blue-600 transition-colors"
+                className="p-3 text-gray-400 hover:text-blue-600 transition-colors hidden sm:block"
               >
                 <i className="fas fa-camera text-xl"></i>
               </button>
