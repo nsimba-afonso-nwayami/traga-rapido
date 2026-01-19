@@ -177,7 +177,7 @@ export default function MensagensSolicitante() {
               <div className="divide-y divide-gray-100">
                 {loading ? (
                   <div className="p-12 text-center text-gray-500">
-                    <i className="fas fa-circle-notch fa-spin mr-2"></i>{" "}
+                    <i className="fas fa-circle-notch fa-spin mr-2"></i>
                     Carregando conversas...
                   </div>
                 ) : conversasFiltradas.length > 0 ? (
