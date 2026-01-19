@@ -14,16 +14,18 @@ export const buscarMensagemPorId = (id) => {
   return api.get(`/mensagens/${id}/`);
 };
 
-/**
- * Envia uma nova mensagem vinculada a um pedido.
- * @param {string} texto - O conteúdo da mensagem.
- * @param {number} pedidoId - O ID do pedido ao qual esta conversa pertence.
- */
 export const enviarMensagem = (texto, pedidoId) => {
-  return api.post("/mensagens/", {
+  const userId = localStorage.getItem("userId");
+
+  const payload = {
     texto: texto,
-    pedido: pedidoId
-  });
+    pedido: pedidoId,
+    remetente: userId ? parseInt(userId, 10) : null
+  };
+
+  console.log("Payload Final sendo enviado:", payload);
+
+  return api.post("/mensagens/", payload);
 };
 
 /**
