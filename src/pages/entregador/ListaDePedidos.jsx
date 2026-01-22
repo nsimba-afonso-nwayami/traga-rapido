@@ -153,7 +153,6 @@ export default function ListaDePedidos() {
   const avisouChegadaRef = useRef(false);
   const ultimoEnvioRef = useRef(0);
 
-<<<<<<< HEAD
   // Rolagem automática do chat
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -228,9 +227,6 @@ export default function ListaDePedidos() {
   }, []);
 
   // --- GPS MONITORAMENTO ---
-=======
-  // Substitua o useEffect do navigator.geolocation por este:
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
   useEffect(() => {
     if (!navigator.geolocation) {
       toast.error("Geolocalização não suportada.");
@@ -239,7 +235,6 @@ export default function ListaDePedidos() {
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-<<<<<<< HEAD
         const novaLat = pos.coords.latitude;
         const novaLng = pos.coords.longitude;
         const novaPos = [novaLat, novaLng];
@@ -256,55 +251,10 @@ export default function ListaDePedidos() {
       },
       (err) => console.error("Erro GPS:", err),
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
-=======
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const currentPos = [lat, lon];
-
-        setMinhaPosicao(currentPos);
-
-        // RASTREAMENTO AUTOMÁTICO
-        // Verificamos se há um pedido e se o status exige rastreio
-        if (pedidoAtivo?.id) {
-          const statusParaRastrear = [
-            "ENTREGADOR_A_CAMINHO",
-            "ITEM_RETIRADO",
-            "EM_ENTREGA",
-          ];
-
-          if (statusParaRastrear.includes(pedidoAtivo.status)) {
-            const agora = Date.now();
-
-            // Intervalo de 5 segundos controlado por Ref (não causa re-render)
-            if (agora - ultimoEnvioRef.current > 5000) {
-              enviarPosicao(pedidoAtivo.id, lat, lon)
-                .then(() => {
-                  ultimoEnvioRef.current = agora;
-                  console.log("Posição enviada com sucesso");
-                })
-                .catch((err) => console.error("Erro ao rastrear:", err));
-            }
-          }
-        }
-      },
-      (err) => {
-        console.error("Erro crítico de GPS:", err);
-        if (err.code === 1) toast.error("Por favor, ative o GPS.");
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0, // Garante que a posição não seja do cache
-        timeout: 10000,
-      },
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-<<<<<<< HEAD
   }, [pedidoAtivo, enviarPosicaoAoServidor]);
-=======
-  }, [pedidoAtivo?.id, pedidoAtivo?.status]); // Monitora ID e Status para precisão
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
 
   const carregarDados = useCallback(
     async (isFirstLoad = false) => {
@@ -346,11 +296,7 @@ export default function ListaDePedidos() {
         if (isFirstLoad) setLoading(false);
       }
     },
-<<<<<<< HEAD
     [pedidoAtivo, showChat, buscarMensagens]
-=======
-    [pedidoAtivo],
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
   );
 
   useEffect(() => {
@@ -397,19 +343,8 @@ export default function ListaDePedidos() {
           ? destino_longitude
           : origem_longitude;
 
-<<<<<<< HEAD
       const distMeta = calcularDistanciaMetros(minhaPosicao, [metaLat, metaLon]);
       const desvio = calcularDistanciaMetros(minhaPosicao, ultimaPosicaoRotaRef.current);
-=======
-      const distMeta = calcularDistanciaMetros(minhaPosicao, [
-        metaLat,
-        metaLon,
-      ]);
-      const desvio = calcularDistanciaMetros(
-        minhaPosicao,
-        ultimaPosicaoRotaRef.current,
-      );
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
 
       if (distMeta < 100 && !avisouChegadaRef.current) {
         tocarSom("chegada");
@@ -418,20 +353,7 @@ export default function ListaDePedidos() {
       }
 
       if (!ultimaPosicaoRotaRef.current || desvio > 40) {
-<<<<<<< HEAD
         calcularRotaDinamica(minhaPosicao[0], minhaPosicao[1], metaLat, metaLon);
-=======
-        if (ultimaPosicaoRotaRef.current) {
-          tocarSom("desvio");
-          toast("Recalculando...", { icon: "🔄" });
-        }
-        calcularRotaDinamica(
-          minhaPosicao[0],
-          minhaPosicao[1],
-          metaLat,
-          metaLon,
-        );
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
         ultimaPosicaoRotaRef.current = minhaPosicao;
       }
     }
@@ -471,24 +393,10 @@ export default function ListaDePedidos() {
   };
 
   const abrirNoMaps = (lat, lon) =>
-<<<<<<< HEAD
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=motorcycle`, "_blank");
 
   const abrirWhatsApp = (tel, tit) =>
     window.open(`https://wa.me/${tel.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, sou o entregador do pedido "${tit}". Estou a caminho!`)}`, "_blank");
-=======
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=motorcycle`,
-      "_blank",
-    );
-  const abrirWhatsApp = (tel, tit) =>
-    window.open(
-      `https://wa.me/${tel.replace(/\D/g, "")}?text=${encodeURIComponent(
-        `Olá, sou o entregador do pedido "${tit}". Estou a caminho!`,
-      )}`,
-      "_blank",
-    );
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
 
   const pedidoParaMostrar = pedidoAtivo || pedidos[0];
 
@@ -518,17 +426,8 @@ export default function ListaDePedidos() {
                           <>
                             {pedidoAtivo && (
                               <button
-<<<<<<< HEAD
                                 onClick={() => { setShowChat(true); buscarMensagens(); }}
                                 className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-md hover:bg-blue-700 transition"
-=======
-                                onClick={() =>
-                                  navigate(
-                                    `/dashboard/entregador/mensagens/chat/${pedidoParaMostrar.id}`,
-                                  )
-                                }
-                                className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-md shadow-sm cursor-pointer hover:bg-blue-700 transition"
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
                               >
                                 <i className="fas fa-comments mr-2"></i> Abrir Chat
                               </button>
@@ -536,19 +435,7 @@ export default function ListaDePedidos() {
                             <a href={`tel:${pedidoParaMostrar.telefoneSolicitante}`} className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-md hover:bg-green-700 transition">
                               <i className="fas fa-phone mr-2"></i> Ligar
                             </a>
-<<<<<<< HEAD
                             <button onClick={() => abrirWhatsApp(pedidoParaMostrar.telefoneSolicitante, pedidoParaMostrar.titulo)} className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-md hover:bg-emerald-600 transition">
-=======
-                            <button
-                              onClick={() =>
-                                abrirWhatsApp(
-                                  pedidoParaMostrar.telefoneSolicitante,
-                                  pedidoParaMostrar.titulo,
-                                )
-                              }
-                              className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-md shadow-sm cursor-pointer hover:bg-emerald-600 transition"
-                            >
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
                               <i className="fab fa-whatsapp mr-2"></i> WhatsApp
                             </button>
                           </>
@@ -575,19 +462,7 @@ export default function ListaDePedidos() {
                   )}
 
                   <div className="space-y-4">
-<<<<<<< HEAD
                     <div onClick={() => abrirNoMaps(pedidoParaMostrar.origem_latitude, pedidoParaMostrar.origem_longitude)} className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm">
-=======
-                    <div
-                      onClick={() =>
-                        abrirNoMaps(
-                          pedidoParaMostrar.origem_latitude,
-                          pedidoParaMostrar.origem_longitude,
-                        )
-                      }
-                      className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm"
-                    >
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
                       <div className="flex items-start text-sm">
                         <i className="fas fa-location-arrow mt-1 mr-3 text-blue-600 text-lg"></i>
                         <div>
@@ -598,19 +473,7 @@ export default function ListaDePedidos() {
                       <i className="fas fa-directions text-blue-600 text-2xl ml-4"></i>
                     </div>
 
-<<<<<<< HEAD
                     <div onClick={() => abrirNoMaps(pedidoParaMostrar.destino_latitude, pedidoParaMostrar.destino_longitude)} className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm">
-=======
-                    <div
-                      onClick={() =>
-                        abrirNoMaps(
-                          pedidoParaMostrar.destino_latitude,
-                          pedidoParaMostrar.destino_longitude,
-                        )
-                      }
-                      className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm"
-                    >
->>>>>>> 05421b0c8719a538b17a0f854a49fcdd78b8462d
                       <div className="flex items-start text-sm">
                         <i className="fas fa-map-marker-alt mt-1 mr-3 text-red-600 text-lg"></i>
                         <div>
@@ -666,7 +529,7 @@ export default function ListaDePedidos() {
 
       {/* --- MODAL DO CHAT --- */}
       {showChat && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-200 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg h-[90vh] sm:h-[600px] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
             {/* Header Chat */}
             <div className="px-6 py-4 bg-blue-700 text-white flex justify-between items-center shrink-0 shadow-md">

@@ -308,7 +308,7 @@ export default function DetalhesDoPedido() {
                     <h3 className="font-bold text-gray-700"><i className="fas fa-map-marked-alt mr-2 text-blue-600"></i>Rastreamento</h3>
                   </div>
                   <div className="w-full h-[450px] rounded-lg overflow-hidden relative z-10">
-                    <button onClick={() => setForceMapUpdate(v => v+1)} className="absolute top-4 right-4 z-[1000] bg-white p-2 rounded shadow-lg text-blue-600 font-bold text-xs">
+                    <button onClick={() => setForceMapUpdate(v => v+1)} className="absolute top-4 right-4 z-1000 bg-white p-2 rounded shadow-lg text-blue-600 font-bold text-xs">
                       CENTRALIZAR
                     </button>
                     <MapContainer center={[pedido.origem_latitude, pedido.origem_longitude]} zoom={14} className="w-full h-full">
@@ -331,7 +331,7 @@ export default function DetalhesDoPedido() {
 
       {/* --- MODAL DE CHAT --- */}
       {showChat && (
-        <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-150 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg h-[90vh] sm:h-[600px] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
             <div className="p-4 bg-blue-700 text-white flex justify-between items-center shadow-md">
               <div className="flex items-center gap-3">
@@ -389,7 +389,7 @@ export default function DetalhesDoPedido() {
 
       {/* MODAL DE AVALIAÇÃO */}
       {showAvaliacaoForm && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-sm p-8 text-center shadow-2xl animate-in zoom-in duration-200">
             <h3 className="text-xl font-bold mb-6">Como foi o serviço?</h3>
             <div className="flex justify-center gap-3 mb-6">
